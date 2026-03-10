@@ -14,5 +14,7 @@ enum WeatherAssembly {
         
         viewController.presenter = presenter
         presenter.view = viewController
+        
+        return viewController
     }
 }
