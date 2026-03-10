@@ -7,8 +7,8 @@
 
 import UIKit
 
-class SceneDelegate: UIResponder, UIWindowSceneDelegate {
-
+final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
+    
     var window: UIWindow?
 
     func scene(
@@ -16,16 +16,15 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         willConnectTo session: UISceneSession,
         options connectionOptions: UIScene.ConnectionOptions
     ) {
+        guard let windowScene = scene as? UIWindowScene else { return }
 
-        guard let windowScene = (scene as? UIWindowScene) else { return }
+        let window = UIWindow(windowScene: windowScene)
+        let rootViewController = WeatherAssembly.build()
+        let navigationController = UINavigationController(rootViewController: rootViewController)
 
-        window = UIWindow(windowScene: windowScene)
+        window.rootViewController = navigationController
+        window.makeKeyAndVisible()
 
-        let rootVC = WeatherAssembly.build()
-        let navigation = UINavigationController(rootViewController: rootVC)
-
-        window?.rootViewController = navigation
-        window?.makeKeyAndVisible()
+        self.window = window
     }
 }
-
