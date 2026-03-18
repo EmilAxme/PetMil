@@ -18,13 +18,11 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     ) {
         guard let windowScene = scene as? UIWindowScene else { return }
 
+        let rootViewController = AppAssembly.build()
+        
         let window = UIWindow(windowScene: windowScene)
-        let rootViewController = WeatherAssembly.build()
-        let navigationController = UINavigationController(rootViewController: rootViewController)
-
-        window.rootViewController = navigationController
+        window.rootViewController = rootViewController
         window.makeKeyAndVisible()
-
         self.window = window
     }
 }
