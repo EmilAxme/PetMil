@@ -18,8 +18,12 @@ class WeatherViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        view.backgroundColor = .systemBackground
+        setupAppearance()
         presenter?.viewDidLoad()
+    }
+    
+    private func setupAppearance() {
+        view.backgroundColor = .systemBackground
     }
 
 }
