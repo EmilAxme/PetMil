@@ -8,10 +8,18 @@
 import Foundation
 
 enum WeatherModels {
-    struct Weather: Codable {
+    struct ViewModel {
         let screenTitle: String
-        let temperature: String
-        let description: String
         let city: String
+        let currentTemperature: String
+        let currentDescription: String
+        let backgroundGIFName: String
+        let rows: [ForecastRow]
+    }
+    
+    struct ForecastRow {
+        let dayText: String
+        let temperatureText: String
+        let descriptionText: String
     }
 }

@@ -17,12 +17,18 @@ final class WeatherPresenter: WeatherPresenterProtocol {
     
     func viewDidLoad() {
         
-        let viewModel = WeatherModels.Weather(
-            screenTitle: "Пенис",
-            temperature: "ДаблПеннис",
-            description: "ТриплПеннис",
-            city: "УльтраПеннис"
-        )
+        let viewModel = WeatherModels.ViewModel(
+                   screenTitle: "Weather",
+                   city: "Moscow",
+                   currentTemperature: "12°",
+                   currentDescription: "Cloudy",
+                   backgroundGIFName: "cloudy",
+                   rows: [
+                       .init(dayText: "Today", temperatureText: "12°", descriptionText: "Cloudy"),
+                       .init(dayText: "Tomorrow", temperatureText: "10°", descriptionText: "Rain"),
+                       .init(dayText: "Friday", temperatureText: "14°", descriptionText: "Sunny")
+                   ]
+               )
         
         view?.displayWeather(viewModel: viewModel)
     }

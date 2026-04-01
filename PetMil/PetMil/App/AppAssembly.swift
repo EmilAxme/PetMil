@@ -9,7 +9,7 @@ import UIKit
 
 enum AppAssembly {
     static func build() -> UIViewController {
-        let tabBarController = UITabBarController()
+        let tabBarController = AppTabBarController()
         
         let citySearchViewController = CitySearchAssembly.build()
         let weatherViewController = WeatherAssembly.build()

@@ -8,7 +8,7 @@
 import UIKit
 
 protocol WeatherViewProtocol: AnyObject {
-    func displayWeather(viewModel: WeatherModels.Weather)
+    func displayWeather(viewModel: WeatherModels.ViewModel)
 }
 
 class WeatherViewController: UIViewController {
@@ -29,7 +29,7 @@ class WeatherViewController: UIViewController {
 }
 
 extension WeatherViewController: WeatherViewProtocol {
-    func displayWeather(viewModel: WeatherModels.Weather) {
+    func displayWeather(viewModel: WeatherModels.ViewModel) {
         title = viewModel.screenTitle
     }
 }
