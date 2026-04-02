@@ -35,13 +35,17 @@ class WeatherViewController: UIViewController {
         super.viewDidLoad()
         
         setupAppearance()
+        setupLayout()
         presenter?.viewDidLoad()
     }
-    
-    private func setupAppearance() {
+
+}
+
+private extension WeatherViewController {
+    func setupAppearance() {
         view.backgroundColor = .systemBackground
     }
-
+    
     func setupLayout() {
         view.addToView(headerView)
         view.addToView(weatherTableView)
@@ -62,6 +66,15 @@ class WeatherViewController: UIViewController {
 extension WeatherViewController: WeatherViewProtocol {
     func displayWeather(viewModel: WeatherModels.ViewModel) {
         title = viewModel.screenTitle
+        forecastRows = viewModel.rows
+        
+        headerView.configure(
+            city: viewModel.city,
+            temperature: viewModel.currentTemperature,
+            summary: viewModel.currentDescription
+        )
+        
+        weatherTableView.reloadData()
     }
 }
 
