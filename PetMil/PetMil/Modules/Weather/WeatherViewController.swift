@@ -14,6 +14,9 @@ protocol WeatherViewProtocol: AnyObject {
 class WeatherViewController: UIViewController {
     
     var presenter: WeatherPresenterProtocol?
+    
+    private lazy var headerView = WeatherHeaderView()
+
     private lazy var weatherTableView: UITableView = {
         let tableView = UITableView(frame: .zero, style: .plain)
         tableView.backgroundColor = .clear
@@ -39,6 +42,21 @@ class WeatherViewController: UIViewController {
         view.backgroundColor = .systemBackground
     }
 
+    func setupLayout() {
+        view.addToView(headerView)
+        view.addToView(weatherTableView)
+        
+        NSLayoutConstraint.activate([
+            headerView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            headerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            headerView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            
+            weatherTableView.topAnchor.constraint(equalTo: headerView.bottomAnchor),
+            weatherTableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            weatherTableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            weatherTableView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        ])
+    }
 }
 
 extension WeatherViewController: WeatherViewProtocol {
