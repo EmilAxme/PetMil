@@ -11,9 +11,23 @@ protocol WeatherViewProtocol: AnyObject {
     func displayWeather(viewModel: WeatherModels.ViewModel)
 }
 
-class WeatherViewController: UIViewController {
+final class WeatherViewController: UIViewController {
     
     var presenter: WeatherPresenterProtocol?
+    
+    private lazy var backgroundView: UIView = {
+        let view = UIView()
+        view.backgroundColor = .systemBlue.withAlphaComponent(0.15)
+        return view
+    }()
+    
+    private lazy var contentContainerView: UIView = {
+        let view = UIView()
+        view.backgroundColor = .secondarySystemBackground.withAlphaComponent(1)
+        view.layer.cornerRadius = 24
+        view.layer.cornerCurve = .continuous
+        return view
+    }()
     
     private lazy var headerView = WeatherHeaderView()
 
