@@ -63,18 +63,30 @@ private extension WeatherViewController {
     }
     
     func setupLayout() {
+        view.addToView(backgroundView)
         view.addToView(headerView)
+        view.addToView(contentContainerView)
         view.addToView(weatherTableView)
         
         NSLayoutConstraint.activate([
-            headerView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-            headerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            headerView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            backgroundView.topAnchor.constraint(equalTo: view.topAnchor),
+            backgroundView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            backgroundView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            backgroundView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
             
-            weatherTableView.topAnchor.constraint(equalTo: headerView.bottomAnchor),
-            weatherTableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            weatherTableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            weatherTableView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+            headerView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 12),
+            headerView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            headerView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+            
+            contentContainerView.topAnchor.constraint(equalTo: headerView.bottomAnchor, constant: 16),
+            contentContainerView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            contentContainerView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+            contentContainerView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -12),
+            
+            weatherTableView.topAnchor.constraint(equalTo: contentContainerView.topAnchor),
+            weatherTableView.leadingAnchor.constraint(equalTo: contentContainerView.leadingAnchor),
+            weatherTableView.trailingAnchor.constraint(equalTo: contentContainerView.trailingAnchor),
+            weatherTableView.bottomAnchor.constraint(equalTo: contentContainerView.bottomAnchor)
         ])
     }
 }
