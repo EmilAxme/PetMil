@@ -17,9 +17,14 @@ final class WeatherPresenter {
     weak var view: WeatherViewProtocol?
     
     private let storage: SelectedCityStorageProtocol
+    private let weatherService: WeatherServiceProtocol
     
-    init(storage: SelectedCityStorageProtocol) {
+    init(
+        storage: SelectedCityStorageProtocol,
+        weatherService: WeatherServiceProtocol
+    ) {
         self.storage = storage
+        self.weatherService = weatherService
     }
 }
     
