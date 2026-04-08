@@ -37,7 +37,7 @@ final class WeatherViewController: UIViewController {
         tableView.delegate = self
         tableView.separatorStyle = .none
         tableView.rowHeight = UITableView.automaticDimension
-        tableView.estimatedRowHeight = 72
+        tableView.estimatedRowHeight = 88
         tableView.showsVerticalScrollIndicator = false
         tableView.backgroundColor = .clear
         tableView.contentInset = UIEdgeInsets(top: 8, left: 0, bottom: 16, right: 0)
@@ -58,6 +58,7 @@ final class WeatherViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(true, animated: animated)
+        presenter?.viewWillAppear()
     }
 
 }

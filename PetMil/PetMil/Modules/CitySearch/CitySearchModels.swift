@@ -8,5 +8,13 @@
 import Foundation
 
 enum CitySearchModels {
+    struct City {
+        let name: String
+        let country: String
+    }
     
+    struct ViewModel {
+        let title: String
+        let cities: [City]
+    }
 }
