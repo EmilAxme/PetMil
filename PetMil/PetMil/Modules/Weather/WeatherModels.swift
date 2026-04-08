@@ -9,11 +9,9 @@ import Foundation
 
 enum WeatherModels {
     struct ViewModel {
-        let screenTitle: String
         let city: String
         let currentTemperature: String
         let currentDescription: String
-        let backgroundGIFName: String
         let rows: [ForecastRow]
     }
     
@@ -21,5 +19,9 @@ enum WeatherModels {
         let dayText: String
         let temperatureText: String
         let descriptionText: String
+        let humidityText: String
+        let windText: String
+        let feelsLikeText: String
+        let pressureText: String
     }
 }
