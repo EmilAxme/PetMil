@@ -15,6 +15,11 @@ final class WeatherPresenter: WeatherPresenterProtocol {
     
     weak var view: WeatherViewProtocol?
     
+    private let storage: SelectedCityStorageProtocol
+    init(storage: SelectedCityStorageProtocol) {
+        self.storage = storage
+    }
+}
     func viewDidLoad() {
         
         let viewModel = WeatherModels.ViewModel(

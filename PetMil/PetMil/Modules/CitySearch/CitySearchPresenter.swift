@@ -13,6 +13,10 @@ protocol CitySearchPresenterProtocol: AnyObject {
 
 final class CitySearchPresenter {
     weak var view: CitySearchViewProtocol?
+    private let storage: SelectedCityStorageProtocol
+    init(storage: SelectedCityStorageProtocol) {
+        self.storage = storage
+    }
 }
 
 extension CitySearchPresenter: CitySearchPresenterProtocol {
