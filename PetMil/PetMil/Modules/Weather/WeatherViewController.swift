@@ -98,7 +98,6 @@ private extension WeatherViewController {
 
 extension WeatherViewController: WeatherViewProtocol {
     func displayWeather(viewModel: WeatherModels.ViewModel) {
-        title = viewModel.screenTitle
         forecastRows = viewModel.rows
         
         headerView.configure(
@@ -127,5 +126,11 @@ extension WeatherViewController: UITableViewDataSource, UITableViewDelegate {
         
         cell.configure(with: forecastRows[indexPath.row])
         return cell
+    }
+    
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        let selectedDay = forecastRows[indexPath.row]
+        let detailsViewController = DayDetailsAssembly.build(day: selectedDay)
+        navigationController?.pushViewController(detailsViewController, animated: true)
     }
 }
