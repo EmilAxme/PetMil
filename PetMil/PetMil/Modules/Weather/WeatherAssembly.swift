@@ -10,7 +10,7 @@ import UIKit
 enum WeatherAssembly {
     static func build() -> UIViewController {
         let viewController = WeatherViewController()
-        let presenter = WeatherPresenter()
+        let presenter = WeatherPresenter(storage: SelectedCityStorage.shared)
         
         viewController.presenter = presenter
         presenter.view = viewController

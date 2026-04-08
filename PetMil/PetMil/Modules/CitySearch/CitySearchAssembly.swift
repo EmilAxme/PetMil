@@ -10,7 +10,7 @@ import UIKit
 enum CitySearchAssembly {
     static func build() -> UIViewController {
         let viewController = CitySearchViewController()
-        let presenter = CitySearchPresenter()
+        let presenter = CitySearchPresenter(storage: SelectedCityStorage.shared)
         
         viewController.presenter = presenter
         presenter.view = viewController
