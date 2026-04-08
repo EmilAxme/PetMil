@@ -43,6 +43,17 @@ private extension WeatherPresenter {
     func updateWeather() {
         let selectedCity = storage.selectedCity
         
+        Task {
+            do {
+                let location = try await weatherService.fetchCityLocation(for: selectedCity)
+                print("City location:", location.name, location.latitude, location.longitude)
+            } catch {
+                print("Geocoding error:", error.localizedDescription)
+            }
+        }
+        
+        print("Selected city:", selectedCity)
+        
         let viewModel = WeatherModels.ViewModel(
             city: selectedCity,
             currentTemperature: "12°",
