@@ -33,13 +33,13 @@ final class WeatherViewController: UIViewController {
 
     private lazy var weatherTableView: UITableView = {
         let tableView = UITableView(frame: .zero, style: .plain)
-        tableView.backgroundColor = .clear
         tableView.dataSource = self
         tableView.delegate = self
-        tableView.separatorStyle = .singleLine
+        tableView.separatorStyle = .none
         tableView.rowHeight = UITableView.automaticDimension
         tableView.estimatedRowHeight = 72
         tableView.showsVerticalScrollIndicator = false
+        tableView.backgroundColor = .clear
         tableView.contentInset = UIEdgeInsets(top: 8, left: 0, bottom: 16, right: 0)
         tableView.register(ForecastDayCell.self, forCellReuseIdentifier: ForecastDayCell.reuseIdentifier)
         return tableView
@@ -129,6 +129,8 @@ extension WeatherViewController: UITableViewDataSource, UITableViewDelegate {
     }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
+        
         let selectedDay = forecastRows[indexPath.row]
         let detailsViewController = DayDetailsAssembly.build(day: selectedDay)
         navigationController?.pushViewController(detailsViewController, animated: true)

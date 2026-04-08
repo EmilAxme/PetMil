@@ -10,10 +10,18 @@ import UIKit
 final class ForecastDayCell: UITableViewCell {
     
     static let reuseIdentifier = "ForecastDayCell"
+    
+    private lazy var containerView: UIView = {
+        let view = UIView()
+        view.backgroundColor = .tertiarySystemBackground
+        view.layer.cornerRadius = 18
+        view.layer.cornerCurve = .continuous
+        return view
+    }()
 
     private lazy var dayLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 18, weight: .semibold)
+        label.font = .systemFont(ofSize: 20, weight: .semibold)
         label.textColor = .label
         return label
     }()
@@ -27,7 +35,7 @@ final class ForecastDayCell: UITableViewCell {
     
     private lazy var temperatureLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 18, weight: .bold)
+        label.font = .systemFont(ofSize: 20, weight: .bold)
         label.textColor = .label
         label.textAlignment = .right
         return label
@@ -36,22 +44,23 @@ final class ForecastDayCell: UITableViewCell {
     private lazy var leftStackView: UIStackView = {
         let stack = UIStackView(arrangedSubviews: [dayLabel, descriptionLabel])
         stack.axis = .vertical
-        stack.spacing = 4
+        stack.spacing = 6
         stack.alignment = .leading
         return stack
     }()
     
-    private lazy var containerStackView: UIStackView = {
+    private lazy var contentRowStackView: UIStackView = {
         let stack = UIStackView(arrangedSubviews: [leftStackView, temperatureLabel])
         stack.axis = .horizontal
         stack.alignment = .center
         stack.spacing = 12
+        stack.distribution = .equalSpacing
         return stack
     }()
     
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
-        setupView()
+        setupAppearance()
         setupLayout()
     }
     
