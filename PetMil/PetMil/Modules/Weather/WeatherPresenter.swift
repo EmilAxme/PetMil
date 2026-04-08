@@ -18,17 +18,39 @@ final class WeatherPresenter: WeatherPresenterProtocol {
     func viewDidLoad() {
         
         let viewModel = WeatherModels.ViewModel(
-                   screenTitle: "Weather",
-                   city: "Moscow",
-                   currentTemperature: "12°",
-                   currentDescription: "Cloudy",
-                   backgroundGIFName: "cloudy",
-                   rows: [
-                       .init(dayText: "Today", temperatureText: "12°", descriptionText: "Cloudy"),
-                       .init(dayText: "Tomorrow", temperatureText: "10°", descriptionText: "Rain"),
-                       .init(dayText: "Friday", temperatureText: "14°", descriptionText: "Sunny")
-                   ]
-               )
+                    city: "Moscow",
+                    currentTemperature: "12°",
+                    currentDescription: "Cloudy",
+                    rows: [
+                        .init(
+                            dayText: "Today",
+                            temperatureText: "12°",
+                            descriptionText: "Cloudy",
+                            humidityText: "78%",
+                            windText: "5 m/s",
+                            feelsLikeText: "10°",
+                            pressureText: "1012 hPa"
+                        ),
+                        .init(
+                            dayText: "Tomorrow",
+                            temperatureText: "10°",
+                            descriptionText: "Rain",
+                            humidityText: "85%",
+                            windText: "7 m/s",
+                            feelsLikeText: "8°",
+                            pressureText: "1008 hPa"
+                        ),
+                        .init(
+                            dayText: "Friday",
+                            temperatureText: "14°",
+                            descriptionText: "Sunny",
+                            humidityText: "60%",
+                            windText: "3 m/s",
+                            feelsLikeText: "13°",
+                            pressureText: "1015 hPa"
+                        )
+                    ]
+                )
         
         view?.displayWeather(viewModel: viewModel)
     }
