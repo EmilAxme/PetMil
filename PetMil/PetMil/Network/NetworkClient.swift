@@ -15,8 +15,15 @@ final class NetworkClient: NetworkClientProtocol {
     
     private let session: URLSession
     
-    init(session: URLSession = .shared) {
-        self.session = session
+    init(session: URLSession? = nil) {
+        if let session {
+            self.session = session
+        } else {
+            let configuration = URLSessionConfiguration.default
+            configuration.timeoutIntervalForRequest = 30
+            configuration.timeoutIntervalForResource = 60
+            self.session = URLSession(configuration: configuration)
+        }
     }
 }
 
