@@ -8,12 +8,14 @@
 import UIKit
 
 protocol WeatherViewProtocol: AnyObject {
-    func displayWeather(viewModel: WeatherModels.ViewModel)
+    func displayState(_ state: WeatherModels.ViewState)
 }
 
 final class WeatherViewController: UIViewController {
     
     var presenter: WeatherPresenterProtocol?
+    
+    private var forecastRows: [WeatherModels.ForecastRow] = []
     
     private lazy var backgroundView: UIView = {
         let view = UIView()
@@ -106,13 +108,33 @@ private extension WeatherViewController {
             weatherTableView.topAnchor.constraint(equalTo: contentContainerView.topAnchor),
             weatherTableView.leadingAnchor.constraint(equalTo: contentContainerView.leadingAnchor),
             weatherTableView.trailingAnchor.constraint(equalTo: contentContainerView.trailingAnchor),
-            weatherTableView.bottomAnchor.constraint(equalTo: contentContainerView.bottomAnchor)
+            weatherTableView.bottomAnchor.constraint(equalTo: contentContainerView.bottomAnchor),
+            
+            activityIndicatorView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            activityIndicatorView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            
+            errorView.topAnchor.constraint(equalTo: view.topAnchor),
+            errorView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            errorView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            errorView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
     }
-}
+    
+    func setLoadingState() {
+        activityIndicatorView.startAnimating()
+        
+        headerView.isHidden = true
+        contentContainerView.isHidden = true
+        errorView.isHidden = true
+    }
 
-extension WeatherViewController: WeatherViewProtocol {
-    func displayWeather(viewModel: WeatherModels.ViewModel) {
+    func setContentState(viewModel: WeatherModels.ViewModel) {
+        activityIndicatorView.stopAnimating()
+        
+        headerView.isHidden = false
+        contentContainerView.isHidden = false
+        errorView.isHidden = true
+        
         forecastRows = viewModel.rows
         
         headerView.configure(
@@ -122,6 +144,29 @@ extension WeatherViewController: WeatherViewProtocol {
         )
         
         weatherTableView.reloadData()
+    }
+
+    func setErrorState(message: String) {
+        activityIndicatorView.stopAnimating()
+        
+        headerView.isHidden = true
+        contentContainerView.isHidden = true
+        
+        errorView.isHidden = false
+        errorView.configure(message: message)
+    }
+}
+
+extension WeatherViewController: WeatherViewProtocol {
+    func displayState(_ state: WeatherModels.ViewState) {
+        switch state {
+        case .loading:
+            setLoadingState()
+        case .content(let viewModel):
+            setContentState(viewModel: viewModel)
+        case .error(let message):
+            setErrorState(message: message)
+        }
     }
 }
 
