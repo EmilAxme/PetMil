@@ -10,11 +10,15 @@ import Foundation
 protocol WeatherPresenterProtocol: AnyObject {
     func viewDidLoad()
     func viewWillAppear()
+    func retryButtonTapped()
 }
 
 final class WeatherPresenter {
     
     weak var view: WeatherViewProtocol?
+    
+    private var lastRequestedCity: String?
+    private var weatherTask: Task<Void, Never>?
     
     private let storage: SelectedCityStorageProtocol
     private let weatherService: WeatherServiceProtocol
@@ -27,68 +31,110 @@ final class WeatherPresenter {
         self.weatherService = weatherService
     }
 }
-    
-    
+
+
 extension WeatherPresenter: WeatherPresenterProtocol {
-    func viewDidLoad() {
-        updateWeather()
-    }
+    func viewDidLoad() {    }
     
     func viewWillAppear() {
-        updateWeather()
+        updateWeather(forceReload: false)
+    }
+    
+    func retryButtonTapped() {
+        updateWeather(forceReload: true)
     }
 }
 
 private extension WeatherPresenter {
-    func updateWeather() {
+    func updateWeather(forceReload: Bool) {
+        weatherTask?.cancel()
+        
         let selectedCity = storage.selectedCity
         
-        Task {
+        guard selectedCity != lastRequestedCity else { return }
+        lastRequestedCity = selectedCity
+        
+        view?.displayState(.loading)
+        print("Loading weather for city:", selectedCity)
+        
+        weatherTask = Task { [weak self] in
+            guard let self else { return }
+            
             do {
                 let location = try await weatherService.fetchCityLocation(for: selectedCity)
-                print("City location:", location.name, location.latitude, location.longitude)
+                
+                try Task.checkCancellation()
+                
+                let forecast = try await weatherService.fetchForecast(
+                    lat: location.latitude,
+                    lon: location.longitude
+                )
+                
+                try Task.checkCancellation()
+                
+                let viewModel = makeViewModel(from: forecast, fallbackCity: selectedCity)
+                
+                await MainActor.run {
+                    self.view?.displayState(.content(viewModel))
+                }
+            } catch is CancellationError {
+                print("Weather task cancelled")
             } catch {
-                print("Geocoding error:", error.localizedDescription)
+                lastRequestedCity = nil
+                
+                await MainActor.run {
+                    self.view?.displayState(.error("Failed to load weather data"))
+                }
+                
+                print("Weather loading error:", error.localizedDescription)
             }
         }
         
-        print("Selected city:", selectedCity)
+    }
+    
+    func makeViewModel(from forecast: Forecast, fallbackCity: String) -> WeatherModels.ViewModel {
+        let currentItem = forecast.items.first
         
-        let viewModel = WeatherModels.ViewModel(
-            city: selectedCity,
-            currentTemperature: "12°",
-            currentDescription: "Cloudy",
-            rows: [
-                .init(
-                    dayText: "Today",
-                    temperatureText: "12°",
-                    descriptionText: "Cloudy",
-                    humidityText: "78%",
-                    windText: "5 m/s",
-                    feelsLikeText: "10°",
-                    pressureText: "1012 hPa"
-                ),
-                .init(
-                    dayText: "Tomorrow",
-                    temperatureText: "10°",
-                    descriptionText: "Rain",
-                    humidityText: "85%",
-                    windText: "7 m/s",
-                    feelsLikeText: "8°",
-                    pressureText: "1008 hPa"
-                ),
-                .init(
-                    dayText: "Friday",
-                    temperatureText: "14°",
-                    descriptionText: "Sunny",
-                    humidityText: "60%",
-                    windText: "3 m/s",
-                    feelsLikeText: "13°",
-                    pressureText: "1015 hPa"
-                )
-            ]
+        let currentTemperature = formattedTemperature(currentItem?.temperature)
+        let currentDescription = currentItem?.title ?? "No data"
+        
+        let rows = Array(forecast.items.prefix(5)).map { item in
+            WeatherModels.ForecastRow(
+                dayText: formattedDay(from: item.date),
+                temperatureText: formattedTemperature(item.temperature),
+                descriptionText: item.title,
+                humidityText: "\(item.humidity)%",
+                windText: "\(Int(item.windSpeed.rounded())) m/s",
+                feelsLikeText: formattedTemperature(item.feelsLike),
+                pressureText: "\(item.pressure) hPa"
+            )
+        }
+        
+        return WeatherModels.ViewModel(
+            city: forecast.cityName.isEmpty ? fallbackCity : forecast.cityName,
+            currentTemperature: currentTemperature,
+            currentDescription: currentDescription,
+            rows: rows
         )
+    }
+    
+    func formattedTemperature(_ value: Double?) -> String {
+        guard let value else { return "--°" }
+        return "\(Int(value.rounded()))°"
+    }
+    
+    func formattedDay(from date: Date) -> String {
+        if Calendar.current.isDateInToday(date) {
+            return "Today"
+        }
         
-        view?.displayWeather(viewModel: viewModel)
+        if Calendar.current.isDateInTomorrow(date) {
+            return "Tomorrow"
+        }
+        
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "EEEE"
+        return formatter.string(from: date)
     }
 }
