@@ -98,7 +98,9 @@ private extension WeatherPresenter {
         let currentTemperature = formattedTemperature(currentItem?.temperature)
         let currentDescription = currentItem?.title ?? "No data"
         
-        let rows = Array(forecast.items.prefix(5)).map { item in
+        let dailyItems = makeDailyItems(from: forecast.items, maxCount: 5)
+        
+        let rows = dailyItems.map { item in
             WeatherModels.ForecastRow(
                 dayText: formattedDay(from: item.date),
                 temperatureText: formattedTemperature(item.temperature),
@@ -136,5 +138,36 @@ private extension WeatherPresenter {
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.dateFormat = "EEEE"
         return formatter.string(from: date)
+    }
+    
+    func makeDailyItems(from items: [ForecastItem], maxCount: Int) -> [ForecastItem] {
+        let calendar = Calendar.current
+        
+        let groupedItems = Dictionary(grouping: items) { item in
+            calendar.startOfDay(for: item.date)
+        }
+        
+        let sortedDays = groupedItems.keys.sorted()
+        
+        let dailyItems: [ForecastItem] = sortedDays.compactMap { day in
+            guard let dayItems = groupedItems[day] else { return nil }
+            return bestItemForDay(dayItems)
+        }
+        
+        return Array(dailyItems.prefix(maxCount))
+    }
+
+    func bestItemForDay(_ items: [ForecastItem]) -> ForecastItem? {
+        let calendar = Calendar.current
+        
+        return items.min { lhs, rhs in
+            let lhsHour = calendar.component(.hour, from: lhs.date)
+            let rhsHour = calendar.component(.hour, from: rhs.date)
+            
+            let lhsDistance = abs(lhsHour - 12)
+            let rhsDistance = abs(rhsHour - 12)
+            
+            return lhsDistance < rhsDistance
+        }
     }
 }
