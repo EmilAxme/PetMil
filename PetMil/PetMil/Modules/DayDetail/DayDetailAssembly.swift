@@ -8,9 +8,9 @@
 import UIKit
 
 enum DayDetailsAssembly {
-    static func build(day: WeatherModels.ForecastRow) -> UIViewController {
+    static func build(dayForecast: DailyForecast) -> UIViewController {
         let viewController = DayDetailsViewController()
-        let presenter = DayDetailsPresenter(day: day)
+        let presenter = DayDetailsPresenter(dayForecast: dayForecast)
         
         viewController.presenter = presenter
         presenter.view = viewController

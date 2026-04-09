@@ -66,7 +66,6 @@ final class WeatherViewController: UIViewController {
         super.viewDidLoad()
         setupAppearance()
         setupLayout()
-        //        presenter?.viewDidLoad()
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -191,8 +190,8 @@ extension WeatherViewController: UITableViewDataSource, UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         
-        let selectedDay = forecastRows[indexPath.row]
-        let detailsViewController = DayDetailsAssembly.build(day: selectedDay)
+        let selectedDay = forecastRows[indexPath.row].dailyForecast
+        let detailsViewController = DayDetailsAssembly.build(dayForecast: selectedDay)
         navigationController?.pushViewController(detailsViewController, animated: true)
     }
 }
