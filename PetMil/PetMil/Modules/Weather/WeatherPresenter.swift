@@ -98,17 +98,20 @@ private extension WeatherPresenter {
         let currentTemperature = formattedTemperature(currentItem?.temperature)
         let currentDescription = currentItem?.title ?? "No data"
         
-        let dailyItems = makeDailyItems(from: forecast.items, maxCount: 5)
+        let dailyForecasts = makeDailyForecasts(from: forecast, maxCount: 5)
         
-        let rows = dailyItems.map { item in
-            WeatherModels.ForecastRow(
-                dayText: formattedDay(from: item.date),
-                temperatureText: formattedTemperature(item.temperature),
-                descriptionText: item.title,
-                humidityText: "\(item.humidity)%",
-                windText: "\(Int(item.windSpeed.rounded())) m/s",
-                feelsLikeText: formattedTemperature(item.feelsLike),
-                pressureText: "\(item.pressure) hPa"
+        let rows = dailyForecasts.map { dayForecast in
+            let representativeItem = bestItemForDay(dayForecast.hourlyItems)
+            
+            return WeatherModels.ForecastRow(
+                dayText: formattedDay(from: dayForecast.date),
+                temperatureText: formattedTemperature(representativeItem?.temperature),
+                descriptionText: representativeItem?.title ?? dayForecast.summary,
+                humidityText: "\(representativeItem?.humidity ?? 0)%",
+                windText: "\(Int((representativeItem?.windSpeed ?? 0).rounded())) m/s",
+                feelsLikeText: formattedTemperature(representativeItem?.feelsLike),
+                pressureText: "\(representativeItem?.pressure ?? 0) hPa",
+                dailyForecast: dayForecast
             )
         }
         
@@ -118,6 +121,31 @@ private extension WeatherPresenter {
             currentDescription: currentDescription,
             rows: rows
         )
+    }
+    
+    func makeDailyForecasts(from forecast: Forecast, maxCount: Int) -> [DailyForecast] {
+        let calendar = Calendar.current
+        
+        let groupedItems = Dictionary(grouping: forecast.items) { item in
+            calendar.startOfDay(for: item.date)
+        }
+        
+        let sortedDays = groupedItems.keys.sorted()
+        
+        let dailyForecasts: [DailyForecast] = sortedDays.compactMap { day in
+            guard let dayItems = groupedItems[day], !dayItems.isEmpty else { return nil }
+            guard let representativeItem = bestItemForDay(dayItems) else { return nil }
+            
+            return DailyForecast(
+                date: day,
+                cityName: forecast.cityName,
+                summary: representativeItem.title,
+                currentTemperature: representativeItem.temperature,
+                hourlyItems: dayItems.sorted { $0.date < $1.date }
+            )
+        }
+        
+        return Array(dailyForecasts.prefix(maxCount))
     }
     
     func formattedTemperature(_ value: Double?) -> String {
@@ -138,23 +166,6 @@ private extension WeatherPresenter {
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.dateFormat = "EEEE"
         return formatter.string(from: date)
-    }
-    
-    func makeDailyItems(from items: [ForecastItem], maxCount: Int) -> [ForecastItem] {
-        let calendar = Calendar.current
-        
-        let groupedItems = Dictionary(grouping: items) { item in
-            calendar.startOfDay(for: item.date)
-        }
-        
-        let sortedDays = groupedItems.keys.sorted()
-        
-        let dailyItems: [ForecastItem] = sortedDays.compactMap { day in
-            guard let dayItems = groupedItems[day] else { return nil }
-            return bestItemForDay(dayItems)
-        }
-        
-        return Array(dailyItems.prefix(maxCount))
     }
 
     func bestItemForDay(_ items: [ForecastItem]) -> ForecastItem? {
