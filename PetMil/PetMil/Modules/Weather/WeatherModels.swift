@@ -8,6 +8,12 @@
 import Foundation
 
 enum WeatherModels {
+    enum ViewState {
+        case loading
+        case content(ViewModel)
+        case error(String)
+    }
+    
     struct ViewModel {
         let city: String
         let currentTemperature: String
