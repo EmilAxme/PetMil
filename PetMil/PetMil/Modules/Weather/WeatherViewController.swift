@@ -30,7 +30,7 @@ final class WeatherViewController: UIViewController {
     }()
     
     private lazy var headerView = WeatherHeaderView()
-
+    
     private lazy var weatherTableView: UITableView = {
         let tableView = UITableView(frame: .zero, style: .plain)
         tableView.dataSource = self
@@ -45,14 +45,26 @@ final class WeatherViewController: UIViewController {
         return tableView
     }()
     
-    private var forecastRows: [WeatherModels.ForecastRow] = []
-
+    private lazy var activityIndicatorView: UIActivityIndicatorView = {
+        let view = UIActivityIndicatorView(style: .large)
+        view.hidesWhenStopped = true
+        return view
+    }()
+    
+    private lazy var errorView: WeatherErrorView = {
+        let view = WeatherErrorView()
+        view.isHidden = true
+        view.onRetryTapped = { [weak self] in
+            self?.presenter?.retryButtonTapped()
+        }
+        return view
+    }()
+    
     override func viewDidLoad() {
         super.viewDidLoad()
-        
         setupAppearance()
         setupLayout()
-        presenter?.viewDidLoad()
+        //        presenter?.viewDidLoad()
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -60,7 +72,7 @@ final class WeatherViewController: UIViewController {
         navigationController?.setNavigationBarHidden(true, animated: animated)
         presenter?.viewWillAppear()
     }
-
+    
 }
 
 private extension WeatherViewController {
@@ -72,7 +84,9 @@ private extension WeatherViewController {
         view.addToView(backgroundView)
         view.addToView(headerView)
         view.addToView(contentContainerView)
-        view.addToView(weatherTableView)
+        contentContainerView.addToView(weatherTableView)
+        view.addToView(activityIndicatorView)
+        view.addToView(errorView)
         
         NSLayoutConstraint.activate([
             backgroundView.topAnchor.constraint(equalTo: view.topAnchor),
@@ -117,7 +131,7 @@ extension WeatherViewController: UITableViewDataSource, UITableViewDelegate {
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-
+        
         guard let cell = tableView.dequeueReusableCell(
             withIdentifier: ForecastDayCell.reuseIdentifier,
             for: indexPath
