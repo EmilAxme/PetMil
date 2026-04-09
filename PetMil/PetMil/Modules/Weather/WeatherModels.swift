@@ -29,5 +29,6 @@ enum WeatherModels {
         let windText: String
         let feelsLikeText: String
         let pressureText: String
+        let dailyForecast: DailyForecast
     }
 }
