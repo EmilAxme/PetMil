@@ -15,6 +15,8 @@ final class WeatherViewController: UIViewController {
     
     var presenter: WeatherPresenterProtocol?
     
+    var weatherIconService: WeatherIconServiceProtocol?
+    
     private var forecastRows: [WeatherModels.ForecastRow] = []
     
     private lazy var backgroundView: UIView = {
@@ -142,6 +144,11 @@ private extension WeatherViewController {
             summary: viewModel.currentDescription
         )
         
+        weatherIconService?.loadIcon(
+            into: headerView.iconImageView,
+            iconCode: viewModel.currentIconCode
+        )
+        
         weatherTableView.reloadData()
     }
 
@@ -184,6 +191,12 @@ extension WeatherViewController: UITableViewDataSource, UITableViewDelegate {
         }
         
         cell.configure(with: forecastRows[indexPath.row])
+        
+        weatherIconService?.loadIcon(
+            into: cell.iconImageView,
+            iconCode: forecastRows[indexPath.row].iconCode
+        )
+        
         return cell
     }
     

@@ -18,6 +18,12 @@ final class ForecastDayCell: UITableViewCell {
         view.layer.cornerCurve = .continuous
         return view
     }()
+    
+    lazy var iconImageView: UIImageView = {
+        let imageView = UIImageView()
+        imageView.contentMode = .scaleAspectFit
+        return imageView
+    }()
 
     private lazy var dayLabel: UILabel = {
         let label = UILabel()
@@ -47,11 +53,19 @@ final class ForecastDayCell: UITableViewCell {
         return label
     }()
     
-    private lazy var leftStackView: UIStackView = {
+    private lazy var textStackView: UIStackView = {
         let stack = UIStackView(arrangedSubviews: [dayLabel, descriptionLabel])
         stack.axis = .vertical
         stack.spacing = 6
         stack.alignment = .leading
+        return stack
+    }()
+
+    private lazy var leftStackView: UIStackView = {
+        let stack = UIStackView(arrangedSubviews: [iconImageView, textStackView])
+        stack.axis = .horizontal
+        stack.spacing = 10
+        stack.alignment = .center
         return stack
     }()
     
@@ -99,6 +113,14 @@ final class ForecastDayCell: UITableViewCell {
         
         animator.startAnimation()
     }
+    
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        iconImageView.image = nil
+        dayLabel.text = nil
+        descriptionLabel.text = nil
+        temperatureLabel.attributedText = nil
+    }
 }
 
 private extension ForecastDayCell {
@@ -129,7 +151,10 @@ private extension ForecastDayCell {
             temperatureLabel.trailingAnchor.constraint(equalTo: temperatureContainerView.trailingAnchor, constant: -6),
             temperatureLabel.bottomAnchor.constraint(equalTo: temperatureContainerView.bottomAnchor),
             
-            temperatureContainerView.widthAnchor.constraint(greaterThanOrEqualToConstant: 72)
+            temperatureContainerView.widthAnchor.constraint(greaterThanOrEqualToConstant: 72),
+            
+            iconImageView.widthAnchor.constraint(equalToConstant: 28),
+            iconImageView.heightAnchor.constraint(equalToConstant: 28),
         ])
     }
     

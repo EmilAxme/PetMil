@@ -112,6 +112,7 @@ private extension WeatherPresenter {
                 windText: "\(Int((representativeItem?.windSpeed ?? 0).rounded())) m/s",
                 feelsLikeText: formattedTemperature(representativeItem?.feelsLike),
                 pressureText: "\(representativeItem?.pressure ?? 0) hPa",
+                iconCode: representativeItem?.iconCode,
                 dailyForecast: dayForecast
             )
         }
@@ -120,6 +121,7 @@ private extension WeatherPresenter {
             city: forecast.cityName.isEmpty ? fallbackCity : forecast.cityName,
             currentTemperature: currentTemperature,
             currentDescription: currentDescription,
+            currentIconCode: currentItem?.iconCode,
             rows: rows
         )
     }

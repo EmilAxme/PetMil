@@ -16,6 +16,7 @@ enum WeatherAssembly {
             networkClient: networkClient,
             apiKey: Secrets.openWeatherAPIKey
         )
+        let weatherIconService = WeatherIconService()
         
         let presenter = WeatherPresenter(
             storage: SelectedCityStorage.shared,
@@ -23,6 +24,7 @@ enum WeatherAssembly {
         )
         
         viewController.presenter = presenter
+        viewController.weatherIconService = weatherIconService
         presenter.view = viewController
         
         return viewController

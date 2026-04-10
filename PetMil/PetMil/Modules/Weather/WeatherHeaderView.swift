@@ -32,9 +32,16 @@ final class WeatherHeaderView: UIView {
         return label
     }()
     
+    lazy var iconImageView: UIImageView = {
+        let imageView = UIImageView()
+        imageView.contentMode = .scaleAspectFit
+        return imageView
+    }()
+    
     private lazy var stackView: UIStackView = {
         let stack = UIStackView(arrangedSubviews: [
             cityLabel,
+            iconImageView,
             temperatureLabel,
             summaryLabel
         ])
@@ -73,7 +80,9 @@ private extension WeatherHeaderView {
             stackView.topAnchor.constraint(equalTo: topAnchor, constant: 24),
             stackView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 20),
             stackView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -20),
-            stackView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -24)
+            stackView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -24),
+            
+            iconImageView.heightAnchor.constraint(equalToConstant: 60)
         ])
     }
 }

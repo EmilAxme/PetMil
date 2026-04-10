@@ -18,6 +18,7 @@ enum WeatherModels {
         let city: String
         let currentTemperature: String
         let currentDescription: String
+        let currentIconCode: String?
         let rows: [ForecastRow]
     }
     
@@ -30,6 +31,7 @@ enum WeatherModels {
         let windText: String
         let feelsLikeText: String
         let pressureText: String
+        let iconCode: String?
         let dailyForecast: DailyForecast
     }
 }
