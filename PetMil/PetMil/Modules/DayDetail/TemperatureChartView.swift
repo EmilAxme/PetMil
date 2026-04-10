@@ -34,6 +34,11 @@ final class TemperatureChartView: UIView {
         setNeedsDisplay()
     }
     
+    func updateSelectedIndex(_ index: Int) {
+        selectedIndex = index
+        setNeedsDisplay()
+    }
+    
     override func layoutSubviews() {
         super.layoutSubviews()
         recalculatePoints()
@@ -44,6 +49,8 @@ final class TemperatureChartView: UIView {
         
         let path = UIBezierPath()
         path.lineWidth = 3
+        path.lineJoinStyle = .round
+        path.lineCapStyle = .round
         
         path.move(to: points[0])
         for point in points.dropFirst() {
@@ -54,11 +61,12 @@ final class TemperatureChartView: UIView {
         path.stroke()
         
         for (index, point) in points.enumerated() {
+            let size: CGFloat = index == selectedIndex ? 12 : 8
             let circleRect = CGRect(
-                x: point.x - 4,
-                y: point.y - 4,
-                width: 8,
-                height: 8
+                x: point.x - size / 2,
+                y: point.y - size / 2,
+                width: size,
+                height: size
             )
             
             let circlePath = UIBezierPath(ovalIn: circleRect)
