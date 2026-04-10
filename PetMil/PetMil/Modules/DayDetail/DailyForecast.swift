@@ -12,5 +12,7 @@ struct DailyForecast {
     let cityName: String
     let summary: String
     let currentTemperature: Double
+    let minTemperature: Double
+    let maxTemperature: Double
     let hourlyItems: [ForecastItem]
 }
