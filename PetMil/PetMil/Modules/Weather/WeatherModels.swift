@@ -23,7 +23,8 @@ enum WeatherModels {
     
     struct ForecastRow {
         let dayText: String
-        let temperatureText: String
+        let maxTemperatureText: String
+        let minTemperatureText: String
         let descriptionText: String
         let humidityText: String
         let windText: String
