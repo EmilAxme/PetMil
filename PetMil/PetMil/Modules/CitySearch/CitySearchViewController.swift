@@ -39,6 +39,17 @@ final class CitySearchViewController: UIViewController {
         return tableView
     }()
     
+    private lazy var emptyStateLabel: UILabel = {
+        let label = UILabel()
+        label.text = "Ничего не найдено,\nвидимо город скрыт за туманом..."
+        label.font = .systemFont(ofSize: 20, weight: .medium)
+        label.textColor = .secondaryLabel
+        label.textAlignment = .center
+        label.numberOfLines = 0
+        label.isHidden = true
+        return label
+    }()
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         setupAppearance()
@@ -57,19 +68,31 @@ private extension CitySearchViewController {
     
     func setupLayout() {
         view.addToView(cityTableView)
+        view.addToView(emptyStateLabel)
         
         NSLayoutConstraint.activate([
             cityTableView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             cityTableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             cityTableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            cityTableView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+            cityTableView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            
+            emptyStateLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            emptyStateLabel.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            emptyStateLabel.leadingAnchor.constraint(greaterThanOrEqualTo: view.leadingAnchor, constant: 24),
+            emptyStateLabel.trailingAnchor.constraint(lessThanOrEqualTo: view.trailingAnchor, constant: -24)
         ])
     }
 }
 
 extension CitySearchViewController: CitySearchViewProtocol {
     func displayCities(_ viewModel: CitySearchModels.ViewModel) {
+        title = viewModel.title
         cities = viewModel.cities
+        
+        let isEmpty = cities.isEmpty
+        cityTableView.isHidden = isEmpty
+        emptyStateLabel.isHidden = !isEmpty
+        
         cityTableView.reloadData()
     }
     
@@ -84,7 +107,7 @@ extension CitySearchViewController: UITableViewDataSource, UITableViewDelegate {
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-
+        
         guard let cell = tableView.dequeueReusableCell(
             withIdentifier: CityResultCell.reuseIdentifier,
             for: indexPath
@@ -93,6 +116,7 @@ extension CitySearchViewController: UITableViewDataSource, UITableViewDelegate {
         }
         
         cell.configure(with: cities[indexPath.row])
+        
         return cell
     }
     
