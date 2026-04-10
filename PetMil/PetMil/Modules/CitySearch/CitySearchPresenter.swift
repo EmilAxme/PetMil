@@ -19,6 +19,8 @@ final class CitySearchPresenter {
     
     private let storage: SelectedCityStorageProtocol
     
+    private var searchWorkItem: DispatchWorkItem?
+    
     private let allCities: [CitySearchModels.City] = [
         .init(name: "Moscow", country: "Russia"),
         .init(name: "Saint Petersburg", country: "Russia"),
@@ -47,20 +49,27 @@ extension CitySearchPresenter: CitySearchPresenterProtocol {
     }
     
     func didUpdateSearch(text: String) {
-        let trimmedText = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        searchWorkItem?.cancel()
         
-        guard !trimmedText.isEmpty else {
-            filteredCities = allCities
-            updateView()
-            return
+        let workItem = DispatchWorkItem { [weak self] in
+            guard let self else { return }
+            
+            let trimmedText = text.trimmingCharacters(in: .whitespacesAndNewlines)
+            
+            if trimmedText.isEmpty {
+                self.filteredCities = self.allCities
+            } else {
+                self.filteredCities = self.allCities.filter {
+                    $0.name.localizedCaseInsensitiveContains(trimmedText) ||
+                    $0.country.localizedCaseInsensitiveContains(trimmedText)
+                }
+            }
+            
+            self.updateView()
         }
         
-        filteredCities = allCities.filter {
-            $0.name.localizedCaseInsensitiveContains(trimmedText) ||
-            $0.country.localizedCaseInsensitiveContains(trimmedText)
-        }
-        
-        updateView()
+        searchWorkItem = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35, execute: workItem)
     }
     
     func didSelectCity(at index: Int) {
