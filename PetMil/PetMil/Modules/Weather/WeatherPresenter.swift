@@ -96,7 +96,7 @@ private extension WeatherPresenter {
         let currentItem = forecast.items.first
         
         let currentTemperature = formattedTemperature(currentItem?.temperature)
-        let currentDescription = currentItem?.title ?? "No data"
+        let currentDescription = formattedDescription(currentItem?.description) ?? "No data"
         
         let dailyForecasts = makeDailyForecasts(from: forecast, maxCount: 5)
         
@@ -105,8 +105,9 @@ private extension WeatherPresenter {
             
             return WeatherModels.ForecastRow(
                 dayText: formattedDay(from: dayForecast.date),
-                temperatureText: formattedTemperature(representativeItem?.temperature),
-                descriptionText: representativeItem?.title ?? dayForecast.summary,
+                maxTemperatureText: formattedTemperature(dayForecast.maxTemperature),
+                minTemperatureText: formattedTemperature(dayForecast.minTemperature),
+                descriptionText: formattedDescription(representativeItem?.description) ?? dayForecast.summary,
                 humidityText: "\(representativeItem?.humidity ?? 0)%",
                 windText: "\(Int((representativeItem?.windSpeed ?? 0).rounded())) m/s",
                 feelsLikeText: formattedTemperature(representativeItem?.feelsLike),
@@ -136,11 +137,16 @@ private extension WeatherPresenter {
             guard let dayItems = groupedItems[day], !dayItems.isEmpty else { return nil }
             guard let representativeItem = bestItemForDay(dayItems) else { return nil }
             
+            let minTemperature = dayItems.map(\.temperature).min() ?? representativeItem.temperature
+            let maxTemperature = dayItems.map(\.temperature).max() ?? representativeItem.temperature
+            
             return DailyForecast(
                 date: day,
                 cityName: forecast.cityName,
                 summary: representativeItem.title,
                 currentTemperature: representativeItem.temperature,
+                minTemperature: minTemperature,
+                maxTemperature: maxTemperature,
                 hourlyItems: dayItems.sorted { $0.date < $1.date }
             )
         }
@@ -166,6 +172,17 @@ private extension WeatherPresenter {
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.dateFormat = "EEEE"
         return formatter.string(from: date)
+    }
+    
+    func formattedTemperatureRange(min: Double, max: Double) -> String {
+        let minValue = Int(min.rounded())
+        let maxValue = Int(max.rounded())
+        return "\(maxValue)° / \(minValue)°"
+    }
+    
+    func formattedDescription(_ value: String?) -> String? {
+        guard let value, !value.isEmpty else { return nil }
+        return value.prefix(1).uppercased() + value.dropFirst()
     }
 
     func bestItemForDay(_ items: [ForecastItem]) -> ForecastItem? {

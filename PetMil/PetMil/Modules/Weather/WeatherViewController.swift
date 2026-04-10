@@ -192,6 +192,7 @@ extension WeatherViewController: UITableViewDataSource, UITableViewDelegate {
         
         let selectedDay = forecastRows[indexPath.row].dailyForecast
         let detailsViewController = DayDetailsAssembly.build(dayForecast: selectedDay)
+        detailsViewController.hidesBottomBarWhenPushed = true
         navigationController?.pushViewController(detailsViewController, animated: true)
     }
 }

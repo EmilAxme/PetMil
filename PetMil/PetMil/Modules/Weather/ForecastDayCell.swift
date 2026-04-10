@@ -33,11 +33,17 @@ final class ForecastDayCell: UITableViewCell {
         return label
     }()
     
+    private lazy var temperatureContainerView: UIView = {
+        let view = UIView()
+        return view
+    }()
+    
     private lazy var temperatureLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 20, weight: .bold)
-        label.textColor = .label
         label.textAlignment = .right
+        label.numberOfLines = 1
+        label.setContentCompressionResistancePriority(.required, for: .horizontal)
+        label.setContentHuggingPriority(.required, for: .horizontal)
         return label
     }()
     
@@ -50,7 +56,7 @@ final class ForecastDayCell: UITableViewCell {
     }()
     
     private lazy var contentRowStackView: UIStackView = {
-        let stack = UIStackView(arrangedSubviews: [leftStackView, temperatureLabel])
+        let stack = UIStackView(arrangedSubviews: [leftStackView, temperatureContainerView])
         stack.axis = .horizontal
         stack.alignment = .center
         stack.spacing = 12
@@ -71,7 +77,10 @@ final class ForecastDayCell: UITableViewCell {
     func configure(with model: WeatherModels.ForecastRow) {
         dayLabel.text = model.dayText
         descriptionLabel.text = model.descriptionText
-        temperatureLabel.text = model.temperatureText
+        temperatureLabel.attributedText = makeTemperatureText(
+            maxText: model.maxTemperatureText,
+            minText: model.minTemperatureText
+        )
     }
     
     override func setHighlighted(_ highlighted: Bool, animated: Bool) {
@@ -102,7 +111,8 @@ private extension ForecastDayCell {
     func setupLayout() {
         contentView.addToView(containerView)
         containerView.addToView(contentRowStackView)
-        
+        temperatureContainerView.addToView(temperatureLabel)
+
         NSLayoutConstraint.activate([
             containerView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 6),
             containerView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
@@ -111,10 +121,38 @@ private extension ForecastDayCell {
             
             contentRowStackView.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 18),
             contentRowStackView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
-            contentRowStackView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
+            contentRowStackView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -20),
             contentRowStackView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -18),
             
-            temperatureLabel.widthAnchor.constraint(greaterThanOrEqualToConstant: 44)
+            temperatureLabel.topAnchor.constraint(equalTo: temperatureContainerView.topAnchor),
+            temperatureLabel.leadingAnchor.constraint(equalTo: temperatureContainerView.leadingAnchor),
+            temperatureLabel.trailingAnchor.constraint(equalTo: temperatureContainerView.trailingAnchor, constant: -6),
+            temperatureLabel.bottomAnchor.constraint(equalTo: temperatureContainerView.bottomAnchor),
+            
+            temperatureContainerView.widthAnchor.constraint(greaterThanOrEqualToConstant: 72)
         ])
+    }
+    
+    func makeTemperatureText(maxText: String, minText: String) -> NSAttributedString {
+        let result = NSMutableAttributedString(
+            string: maxText,
+            attributes: [
+                .font: UIFont.systemFont(ofSize: 22, weight: .bold),
+                .foregroundColor: UIColor.label
+            ]
+        )
+        
+        let minPart = NSAttributedString(
+            string: minText,
+            attributes: [
+                .font: UIFont.systemFont(ofSize: 14, weight: .medium),
+                .foregroundColor: UIColor.secondaryLabel,
+                .baselineOffset: -1,
+                .kern: -1.5
+            ]
+        )
+        
+        result.append(minPart)
+        return result
     }
 }
