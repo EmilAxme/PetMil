@@ -136,6 +136,11 @@ private extension WeatherViewController {
             summary: viewModel.currentDescription
         )
         
+        weatherIconService?.loadIcon(
+            into: headerView.iconImageView,
+            iconCode: viewModel.currentIconCode
+        )
+        
         weatherTableView.reloadData()
         
         headerView.isHidden = false
