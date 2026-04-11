@@ -8,12 +8,16 @@
 import UIKit
 
 protocol WeatherViewProtocol: AnyObject {
-    func displayWeather(viewModel: WeatherModels.ViewModel)
+    func displayState(_ state: WeatherModels.ViewState)
 }
 
 final class WeatherViewController: UIViewController {
     
     var presenter: WeatherPresenterProtocol?
+    
+    var weatherIconService: WeatherIconServiceProtocol?
+    
+    private var forecastRows: [WeatherModels.ForecastRow] = []
     
     private lazy var backgroundView: UIView = {
         let view = UIView()
@@ -30,7 +34,9 @@ final class WeatherViewController: UIViewController {
     }()
     
     private lazy var headerView = WeatherHeaderView()
-
+    
+    private lazy var loadingView = WeatherLoadingView()
+    
     private lazy var weatherTableView: UITableView = {
         let tableView = UITableView(frame: .zero, style: .plain)
         tableView.dataSource = self
@@ -45,14 +51,25 @@ final class WeatherViewController: UIViewController {
         return tableView
     }()
     
-    private var forecastRows: [WeatherModels.ForecastRow] = []
-
+    private lazy var activityIndicatorView: UIActivityIndicatorView = {
+        let view = UIActivityIndicatorView(style: .large)
+        view.hidesWhenStopped = true
+        return view
+    }()
+    
+    private lazy var errorView: WeatherErrorView = {
+        let view = WeatherErrorView()
+        view.isHidden = true
+        view.onRetryTapped = { [weak self] in
+            self?.presenter?.retryButtonTapped()
+        }
+        return view
+    }()
+    
     override func viewDidLoad() {
         super.viewDidLoad()
-        
         setupAppearance()
         setupLayout()
-        presenter?.viewDidLoad()
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -60,7 +77,7 @@ final class WeatherViewController: UIViewController {
         navigationController?.setNavigationBarHidden(true, animated: animated)
         presenter?.viewWillAppear()
     }
-
+    
 }
 
 private extension WeatherViewController {
@@ -72,7 +89,10 @@ private extension WeatherViewController {
         view.addToView(backgroundView)
         view.addToView(headerView)
         view.addToView(contentContainerView)
-        view.addToView(weatherTableView)
+        contentContainerView.addToView(weatherTableView)
+        view.addToView(activityIndicatorView)
+        view.addToView(errorView)
+        view.addToView(loadingView)
         
         NSLayoutConstraint.activate([
             backgroundView.topAnchor.constraint(equalTo: view.topAnchor),
@@ -92,13 +112,32 @@ private extension WeatherViewController {
             weatherTableView.topAnchor.constraint(equalTo: contentContainerView.topAnchor),
             weatherTableView.leadingAnchor.constraint(equalTo: contentContainerView.leadingAnchor),
             weatherTableView.trailingAnchor.constraint(equalTo: contentContainerView.trailingAnchor),
-            weatherTableView.bottomAnchor.constraint(equalTo: contentContainerView.bottomAnchor)
+            weatherTableView.bottomAnchor.constraint(equalTo: contentContainerView.bottomAnchor),
+            
+            activityIndicatorView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            activityIndicatorView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            
+            errorView.topAnchor.constraint(equalTo: view.topAnchor),
+            errorView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            errorView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            errorView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            
+            loadingView.topAnchor.constraint(equalTo: view.topAnchor),
+            loadingView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            loadingView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            loadingView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
     }
-}
+    
+    func setLoadingState() {
+        headerView.isHidden = true
+        contentContainerView.isHidden = true
+        errorView.isHidden = true
+        
+        loadingView.show()
+    }
 
-extension WeatherViewController: WeatherViewProtocol {
-    func displayWeather(viewModel: WeatherModels.ViewModel) {
+    func setContentState(viewModel: WeatherModels.ViewModel) {
         forecastRows = viewModel.rows
         
         headerView.configure(
@@ -108,6 +147,35 @@ extension WeatherViewController: WeatherViewProtocol {
         )
         
         weatherTableView.reloadData()
+        
+        headerView.isHidden = false
+        contentContainerView.isHidden = false
+        errorView.isHidden = true
+        
+        loadingView.hideAnimated()
+    }
+
+    func setErrorState(message: String) {
+        loadingView.isHidden = true
+        
+        headerView.isHidden = true
+        contentContainerView.isHidden = true
+        
+        errorView.isHidden = false
+        errorView.configure(message: message)
+    }
+}
+
+extension WeatherViewController: WeatherViewProtocol {
+    func displayState(_ state: WeatherModels.ViewState) {
+        switch state {
+        case .loading:
+            setLoadingState()
+        case .content(let viewModel):
+            setContentState(viewModel: viewModel)
+        case .error(let message):
+            setErrorState(message: message)
+        }
     }
 }
 
@@ -117,7 +185,7 @@ extension WeatherViewController: UITableViewDataSource, UITableViewDelegate {
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-
+        
         guard let cell = tableView.dequeueReusableCell(
             withIdentifier: ForecastDayCell.reuseIdentifier,
             for: indexPath
@@ -126,14 +194,21 @@ extension WeatherViewController: UITableViewDataSource, UITableViewDelegate {
         }
         
         cell.configure(with: forecastRows[indexPath.row])
+        
+        weatherIconService?.loadIcon(
+            into: cell.iconImageView,
+            iconCode: forecastRows[indexPath.row].iconCode
+        )
+        
         return cell
     }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         
-        let selectedDay = forecastRows[indexPath.row]
-        let detailsViewController = DayDetailsAssembly.build(day: selectedDay)
+        let selectedDay = forecastRows[indexPath.row].dailyForecast
+        let detailsViewController = DayDetailsAssembly.build(dayForecast: selectedDay)
+        detailsViewController.hidesBottomBarWhenPushed = true
         navigationController?.pushViewController(detailsViewController, animated: true)
     }
 }

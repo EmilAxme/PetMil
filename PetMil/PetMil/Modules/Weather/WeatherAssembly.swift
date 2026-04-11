@@ -10,9 +10,21 @@ import UIKit
 enum WeatherAssembly {
     static func build() -> UIViewController {
         let viewController = WeatherViewController()
-        let presenter = WeatherPresenter(storage: SelectedCityStorage.shared)
+        
+        let networkClient = NetworkClient()
+        let weatherService = WeatherService(
+            networkClient: networkClient,
+            apiKey: Secrets.openWeatherAPIKey
+        )
+        let weatherIconService = WeatherIconService()
+        
+        let presenter = WeatherPresenter(
+            storage: SelectedCityStorage.shared,
+            weatherService: weatherService
+        )
         
         viewController.presenter = presenter
+        viewController.weatherIconService = weatherIconService
         presenter.view = viewController
         
         return viewController
