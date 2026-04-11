@@ -8,7 +8,6 @@
 import Foundation
 
 protocol WeatherPresenterProtocol: AnyObject {
-    func viewDidLoad()
     func viewWillAppear()
     func retryButtonTapped()
 }
@@ -34,8 +33,6 @@ final class WeatherPresenter {
 
 
 extension WeatherPresenter: WeatherPresenterProtocol {
-    func viewDidLoad() {    }
-    
     func viewWillAppear() {
         updateWeather(forceReload: false)
     }
@@ -144,7 +141,6 @@ private extension WeatherPresenter {
             
             return DailyForecast(
                 date: day,
-                cityName: forecast.cityName,
                 summary: representativeItem.title,
                 currentTemperature: representativeItem.temperature,
                 minTemperature: minTemperature,
@@ -174,12 +170,6 @@ private extension WeatherPresenter {
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.dateFormat = "EEEE"
         return formatter.string(from: date)
-    }
-    
-    func formattedTemperatureRange(min: Double, max: Double) -> String {
-        let minValue = Int(min.rounded())
-        let maxValue = Int(max.rounded())
-        return "\(maxValue)° / \(minValue)°"
     }
     
     func formattedDescription(_ value: String?) -> String? {

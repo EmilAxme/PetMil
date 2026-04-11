@@ -9,7 +9,6 @@ import Foundation
 
 struct DailyForecast {
     let date: Date
-    let cityName: String
     let summary: String
     let currentTemperature: Double
     let minTemperature: Double

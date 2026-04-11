@@ -53,19 +53,7 @@ extension CitySearchPresenter: CitySearchPresenterProtocol {
         
         let workItem = DispatchWorkItem { [weak self] in
             guard let self else { return }
-            
-            let trimmedText = text.trimmingCharacters(in: .whitespacesAndNewlines)
-            
-            if trimmedText.isEmpty {
-                self.filteredCities = self.allCities
-            } else {
-                self.filteredCities = self.allCities.filter {
-                    $0.name.localizedCaseInsensitiveContains(trimmedText) ||
-                    $0.country.localizedCaseInsensitiveContains(trimmedText)
-                }
-            }
-            
-            self.updateView()
+            self.applySearch(text: text)
         }
         
         searchWorkItem = workItem
@@ -84,9 +72,23 @@ extension CitySearchPresenter: CitySearchPresenterProtocol {
 private extension CitySearchPresenter {
     func updateView() {
         let viewModel = CitySearchModels.ViewModel(
-            title: "Search City",
             cities: filteredCities
         )
         view?.displayCities(viewModel)
+    }
+    
+    func applySearch(text: String) {
+        let trimmedText = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        if trimmedText.isEmpty {
+            filteredCities = allCities
+        } else {
+            filteredCities = allCities.filter {
+                $0.name.localizedCaseInsensitiveContains(trimmedText) ||
+                $0.country.localizedCaseInsensitiveContains(trimmedText)
+            }
+        }
+        
+        updateView()
     }
 }

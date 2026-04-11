@@ -51,12 +51,6 @@ final class WeatherViewController: UIViewController {
         return tableView
     }()
     
-    private lazy var activityIndicatorView: UIActivityIndicatorView = {
-        let view = UIActivityIndicatorView(style: .large)
-        view.hidesWhenStopped = true
-        return view
-    }()
-    
     private lazy var errorView: WeatherErrorView = {
         let view = WeatherErrorView()
         view.isHidden = true
@@ -90,7 +84,6 @@ private extension WeatherViewController {
         view.addToView(headerView)
         view.addToView(contentContainerView)
         contentContainerView.addToView(weatherTableView)
-        view.addToView(activityIndicatorView)
         view.addToView(errorView)
         view.addToView(loadingView)
         
@@ -113,9 +106,6 @@ private extension WeatherViewController {
             weatherTableView.leadingAnchor.constraint(equalTo: contentContainerView.leadingAnchor),
             weatherTableView.trailingAnchor.constraint(equalTo: contentContainerView.trailingAnchor),
             weatherTableView.bottomAnchor.constraint(equalTo: contentContainerView.bottomAnchor),
-            
-            activityIndicatorView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            activityIndicatorView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
             
             errorView.topAnchor.constraint(equalTo: view.topAnchor),
             errorView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -144,6 +134,11 @@ private extension WeatherViewController {
             city: viewModel.city,
             temperature: viewModel.currentTemperature,
             summary: viewModel.currentDescription
+        )
+        
+        weatherIconService?.loadIcon(
+            into: headerView.iconImageView,
+            iconCode: viewModel.currentIconCode
         )
         
         weatherTableView.reloadData()
