@@ -14,7 +14,6 @@ enum CitySearchModels {
     }
     
     struct ViewModel {
-        let title: String
         let cities: [City]
     }
 }

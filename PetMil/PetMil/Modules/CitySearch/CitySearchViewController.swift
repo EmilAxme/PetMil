@@ -60,6 +60,7 @@ final class CitySearchViewController: UIViewController {
 
 private extension CitySearchViewController {
     func setupAppearance() {
+        title = "Search City"
         view.backgroundColor = .systemBackground
         navigationItem.searchController = searchController
         navigationItem.hidesSearchBarWhenScrolling = false
@@ -86,7 +87,6 @@ private extension CitySearchViewController {
 
 extension CitySearchViewController: CitySearchViewProtocol {
     func displayCities(_ viewModel: CitySearchModels.ViewModel) {
-        title = viewModel.title
         cities = viewModel.cities
         
         let isEmpty = cities.isEmpty
