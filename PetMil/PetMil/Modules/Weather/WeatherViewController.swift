@@ -35,6 +35,8 @@ final class WeatherViewController: UIViewController {
     
     private lazy var headerView = WeatherHeaderView()
     
+    private lazy var loadingView = WeatherLoadingView()
+    
     private lazy var weatherTableView: UITableView = {
         let tableView = UITableView(frame: .zero, style: .plain)
         tableView.dataSource = self
@@ -90,6 +92,7 @@ private extension WeatherViewController {
         contentContainerView.addToView(weatherTableView)
         view.addToView(activityIndicatorView)
         view.addToView(errorView)
+        view.addToView(loadingView)
         
         NSLayoutConstraint.activate([
             backgroundView.topAnchor.constraint(equalTo: view.topAnchor),
@@ -117,25 +120,24 @@ private extension WeatherViewController {
             errorView.topAnchor.constraint(equalTo: view.topAnchor),
             errorView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             errorView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            errorView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+            errorView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            
+            loadingView.topAnchor.constraint(equalTo: view.topAnchor),
+            loadingView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            loadingView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            loadingView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
     }
     
     func setLoadingState() {
-        activityIndicatorView.startAnimating()
-        
         headerView.isHidden = true
         contentContainerView.isHidden = true
         errorView.isHidden = true
+        
+        loadingView.show()
     }
 
     func setContentState(viewModel: WeatherModels.ViewModel) {
-        activityIndicatorView.stopAnimating()
-        
-        headerView.isHidden = false
-        contentContainerView.isHidden = false
-        errorView.isHidden = true
-        
         forecastRows = viewModel.rows
         
         headerView.configure(
@@ -144,16 +146,17 @@ private extension WeatherViewController {
             summary: viewModel.currentDescription
         )
         
-        weatherIconService?.loadIcon(
-            into: headerView.iconImageView,
-            iconCode: viewModel.currentIconCode
-        )
-        
         weatherTableView.reloadData()
+        
+        headerView.isHidden = false
+        contentContainerView.isHidden = false
+        errorView.isHidden = true
+        
+        loadingView.hideAnimated()
     }
 
     func setErrorState(message: String) {
-        activityIndicatorView.stopAnimating()
+        loadingView.isHidden = true
         
         headerView.isHidden = true
         contentContainerView.isHidden = true
