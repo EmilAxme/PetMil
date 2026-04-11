@@ -141,7 +141,6 @@ private extension WeatherPresenter {
             
             return DailyForecast(
                 date: day,
-                cityName: forecast.cityName,
                 summary: representativeItem.title,
                 currentTemperature: representativeItem.temperature,
                 minTemperature: minTemperature,
