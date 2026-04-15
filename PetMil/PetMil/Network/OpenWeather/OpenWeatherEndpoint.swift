@@ -8,6 +8,7 @@
 import Foundation
 
 enum OpenWeatherEndpoint {
+    case citySearch(query: String, apiKey: String)
     case geocoding(city: String, apiKey: String)
     case forecast(lat: Double, lon: Double, apiKey: String)
 }
@@ -19,7 +20,7 @@ extension OpenWeatherEndpoint: Endpoint {
     
     var path: String {
         switch self {
-        case .geocoding:
+        case .citySearch, .geocoding:
             return "/geo/1.0/direct"
         case .forecast:
             return "/data/2.5/forecast"
@@ -28,19 +29,27 @@ extension OpenWeatherEndpoint: Endpoint {
     
     var method: HTTPMethod {
         switch self {
-        case .geocoding, .forecast:
+        case .citySearch, .geocoding, .forecast:
             return .get
         }
     }
     
     var queryItems: [URLQueryItem] {
         switch self {
+        case let .citySearch(query, apiKey):
+            return [
+                URLQueryItem(name: "q", value: query),
+                URLQueryItem(name: "limit", value: "5"),
+                URLQueryItem(name: "appid", value: apiKey)
+            ]
+            
         case let .geocoding(city, apiKey):
             return [
                 URLQueryItem(name: "q", value: city),
                 URLQueryItem(name: "limit", value: "1"),
                 URLQueryItem(name: "appid", value: apiKey)
             ]
+            
         case let .forecast(lat, lon, apiKey):
             return [
                 URLQueryItem(name: "lat", value: String(lat)),
