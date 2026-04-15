@@ -53,7 +53,11 @@ final class CityResultCell: UITableViewCell {
     
     func configure(with city: CitySearchModels.City) {
         cityLabel.text = city.name
-        countryLabel.text = city.country
+        if let state = city.state, !state.isEmpty {
+            countryLabel.text = "\(state), \(city.country)"
+        } else {
+            countryLabel.text = city.country
+        }
     }
     
     override func setHighlighted(_ highlighted: Bool, animated: Bool) {
