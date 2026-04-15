@@ -21,20 +21,6 @@ final class CitySearchPresenter {
     
     private var searchWorkItem: DispatchWorkItem?
     
-    private let allCities: [CitySearchModels.City] = [
-        .init(name: "Moscow", country: "Russia"),
-        .init(name: "Saint Petersburg", country: "Russia"),
-        .init(name: "Kazan", country: "Russia"),
-        .init(name: "Novosibirsk", country: "Russia"),
-        .init(name: "Yekaterinburg", country: "Russia"),
-        .init(name: "London", country: "United Kingdom"),
-        .init(name: "Paris", country: "France"),
-        .init(name: "Berlin", country: "Germany"),
-        .init(name: "Rome", country: "Italy"),
-        .init(name: "New York", country: "United States"),
-        .init(name: "Tokyo", country: "Japan")
-    ]
-    
     private var filteredCities: [CitySearchModels.City] = []
     
     init(storage: SelectedCityStorageProtocol) {
