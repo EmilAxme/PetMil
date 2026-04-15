@@ -18,24 +18,30 @@ final class CitySearchPresenter {
     weak var view: CitySearchViewProtocol?
     
     private let storage: SelectedCityStorageProtocol
+    private let citySearchService: CitySearchServiceProtocol
     
     private var searchWorkItem: DispatchWorkItem?
+    private var searchTask: Task<Void, Never>?
     
     private var filteredCities: [CitySearchModels.City] = []
     
-    init(storage: SelectedCityStorageProtocol) {
+    init(
+        storage: SelectedCityStorageProtocol,
+        citySearchService: CitySearchServiceProtocol
+    ) {
         self.storage = storage
+        self.citySearchService = citySearchService
     }
 }
 
 extension CitySearchPresenter: CitySearchPresenterProtocol {
     func viewDidLoad() {
-        filteredCities = allCities
-        updateView()
+        view?.displayCities(.init(cities: []))
     }
     
     func didUpdateSearch(text: String) {
         searchWorkItem?.cancel()
+        searchTask?.cancel()
         
         let workItem = DispatchWorkItem { [weak self] in
             guard let self else { return }
@@ -50,31 +56,47 @@ extension CitySearchPresenter: CitySearchPresenterProtocol {
         guard filteredCities.indices.contains(index) else { return }
         
         let city = filteredCities[index]
-        storage.selectedCity = city.name
-        view?.displaySelectedCity(city.name)
+        storage.selectedCity = SelectedCity(
+            name: city.name,
+            country: city.country,
+            latitude: city.latitude,
+            longitude: city.longitude
+        )
+        
+        view?.routeToWeatherScreen()
     }
 }
 
 private extension CitySearchPresenter {
-    func updateView() {
-        let viewModel = CitySearchModels.ViewModel(
-            cities: filteredCities
-        )
-        view?.displayCities(viewModel)
-    }
-    
     func applySearch(text: String) {
         let trimmedText = text.trimmingCharacters(in: .whitespacesAndNewlines)
         
-        if trimmedText.isEmpty {
-            filteredCities = allCities
-        } else {
-            filteredCities = allCities.filter {
-                $0.name.localizedCaseInsensitiveContains(trimmedText) ||
-                $0.country.localizedCaseInsensitiveContains(trimmedText)
-            }
+        guard !trimmedText.isEmpty else {
+            filteredCities = []
+            view?.displayCities(.init(cities: []))
+            return
         }
         
-        updateView()
+        searchTask = Task { [weak self] in
+            guard let self else { return }
+            
+            do {
+                let cities = try await citySearchService.searchCities(query: trimmedText)
+                self.filteredCities = cities
+                
+                await MainActor.run {
+                    self.view?.displayCities(.init(cities: cities))
+                }
+            } catch is CancellationError {
+                print("City search cancelled")
+            } catch {
+                print("City search error:", error.localizedDescription)
+                
+                await MainActor.run {
+                    self.filteredCities = []
+                    self.view?.displayCities(.init(cities: []))
+                }
+            }
+        }
     }
 }
