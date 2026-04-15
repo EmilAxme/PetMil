@@ -10,7 +10,17 @@ import UIKit
 enum CitySearchAssembly {
     static func build() -> UIViewController {
         let viewController = CitySearchViewController()
-        let presenter = CitySearchPresenter(storage: SelectedCityStorage.shared)
+
+        let networkClient = NetworkClient()
+        let citySearchService = CitySearchService(
+            networkClient: networkClient,
+            apiKey: Secrets.openWeatherAPIKey
+        )
+        
+        let presenter = CitySearchPresenter(
+            storage: SelectedCityStorage.shared,
+            citySearchService: citySearchService
+        )
         
         viewController.presenter = presenter
         presenter.view = viewController
