@@ -12,6 +12,7 @@ struct SelectedCity: Codable {
     let country: String
     let latitude: Double
     let longitude: Double
+    let photoURLString: String?
 }
 
 protocol SelectedCityStorageProtocol: AnyObject {
@@ -29,7 +30,8 @@ final class SelectedCityStorage: SelectedCityStorageProtocol {
         name: "Moscow",
         country: "RU",
         latitude: 55.7504461,
-        longitude: 37.6174943
+        longitude: 37.6174943,
+        photoURLString: nil
     )
     
     var selectedCity: SelectedCity {
