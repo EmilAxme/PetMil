@@ -1,39 +1,41 @@
 import UIKit
 
 final class WeatherLoadingView: UIView {
-    
-    private lazy var imageView: UIImageView = {
-        let imageView = UIImageView()
-        imageView.image = UIImage(named: "weather_loading_cover")
-        imageView.contentMode = .scaleAspectFill
-        imageView.clipsToBounds = true
-        return imageView
+
+    private lazy var activityIndicator: UIActivityIndicatorView = {
+        let indicator = UIActivityIndicatorView(style: .large)
+        indicator.translatesAutoresizingMaskIntoConstraints = false
+        indicator.color = .white
+        indicator.hidesWhenStopped = true
+        return indicator
     }()
-    
+
     override init(frame: CGRect) {
         super.init(frame: frame)
         setupLayout()
     }
-    
+
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-    
+
     func show() {
         isHidden = false
         alpha = 1
+        activityIndicator.startAnimating()
     }
-    
+
     func hideAnimated(completion: (() -> Void)? = nil) {
         UIView.animate(
-            withDuration: 0.5,
+            withDuration: 0.4,
             delay: 0,
-            options: [.curveEaseInOut, .allowUserInteraction],
+            options: [.curveEaseInOut],
             animations: {
                 self.alpha = 0
             },
             completion: { _ in
                 self.isHidden = true
+                self.activityIndicator.stopAnimating()
                 completion?()
             }
         )
@@ -42,13 +44,10 @@ final class WeatherLoadingView: UIView {
 
 private extension WeatherLoadingView {
     func setupLayout() {
-        addToView(imageView)
-        
+        addSubview(activityIndicator)
         NSLayoutConstraint.activate([
-            imageView.topAnchor.constraint(equalTo: topAnchor),
-            imageView.leadingAnchor.constraint(equalTo: leadingAnchor),
-            imageView.trailingAnchor.constraint(equalTo: trailingAnchor),
-            imageView.bottomAnchor.constraint(equalTo: bottomAnchor)
+            activityIndicator.centerXAnchor.constraint(equalTo: centerXAnchor),
+            activityIndicator.centerYAnchor.constraint(equalTo: centerYAnchor)
         ])
     }
 }
