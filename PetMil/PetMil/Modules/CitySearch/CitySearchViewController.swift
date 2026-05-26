@@ -72,7 +72,6 @@ private extension CitySearchViewController {
         navigationItem.searchController = searchController
         navigationItem.hidesSearchBarWhenScrolling = false
         definesPresentationContext = true
-        searchController.searchBar.setRightView(searchLoadingIndicator)
     }
     
     func setupLayout() {
@@ -106,9 +105,9 @@ extension CitySearchViewController: CitySearchViewProtocol {
 
     func displayLoading(_ isLoading: Bool) {
         if isLoading {
-            searchLoadingIndicator.startAnimating()
+            searchController.searchBar.showLoadingIndicator(searchLoadingIndicator)
         } else {
-            searchLoadingIndicator.stopAnimating()
+            searchController.searchBar.hideLoadingIndicator(searchLoadingIndicator)
         }
     }
 
