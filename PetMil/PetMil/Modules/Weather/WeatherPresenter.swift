@@ -70,17 +70,24 @@ private extension WeatherPresenter {
         
         weatherTask = Task { [weak self] in
             guard let self else { return }
-            
+
             do {
-                let forecast = try await weatherService.fetchForecast(
+                async let forecastTask = weatherService.fetchForecast(
                     lat: selectedCity.latitude,
                     lon: selectedCity.longitude
                 )
-                
+                async let photoURLTask = resolvePhotoURL(for: selectedCity)
+
+                let (forecast, photoURL) = try await (forecastTask, photoURLTask)
+
                 try Task.checkCancellation()
-                
-                let viewModel = makeViewModel(from: forecast, fallbackCity: selectedCity.name)
-                
+
+                let viewModel = makeViewModel(
+                    from: forecast,
+                    fallbackCity: selectedCity.name,
+                    backgroundPhotoURL: photoURL
+                )
+
                 await MainActor.run {
                     self.view?.displayState(.content(viewModel))
                 }
@@ -88,11 +95,11 @@ private extension WeatherPresenter {
                 print("Weather task cancelled")
             } catch {
                 lastRequestedCity = nil
-                
+
                 await MainActor.run {
                     self.view?.displayState(.error("Не удалось загрузить данные о погоде"))
                 }
-                
+
                 print("Weather loading error:", error.localizedDescription)
             }
         }
