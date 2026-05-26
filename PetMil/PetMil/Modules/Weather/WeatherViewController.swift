@@ -66,6 +66,12 @@ final class WeatherViewController: UIViewController {
         }
         return view
     }()
+
+    private lazy var emptyCityView: WeatherEmptyCityView = {
+        let view = WeatherEmptyCityView()
+        view.isHidden = true
+        return view
+    }()
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -92,6 +98,7 @@ private extension WeatherViewController {
         view.addToView(contentContainerView)
         contentContainerView.addToView(weatherTableView)
         view.addToView(errorView)
+        view.addToView(emptyCityView)
         view.addToView(loadingView)
         
         NSLayoutConstraint.activate([
@@ -118,6 +125,11 @@ private extension WeatherViewController {
             errorView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             errorView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             errorView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+
+            emptyCityView.topAnchor.constraint(equalTo: view.topAnchor),
+            emptyCityView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            emptyCityView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            emptyCityView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
             
             loadingView.topAnchor.constraint(equalTo: view.topAnchor),
             loadingView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -164,12 +176,22 @@ private extension WeatherViewController {
 
     func setErrorState(message: String) {
         loadingView.isHidden = true
-        
+
         headerView.isHidden = true
         contentContainerView.isHidden = true
-        
+        emptyCityView.isHidden = true
+
         errorView.isHidden = false
         errorView.configure(message: message)
+    }
+
+    func setNoCityState() {
+        loadingView.isHidden = true
+        headerView.isHidden = true
+        contentContainerView.isHidden = true
+        errorView.isHidden = true
+
+        emptyCityView.isHidden = false
     }
 }
 
@@ -182,6 +204,8 @@ extension WeatherViewController: WeatherViewProtocol {
             setContentState(viewModel: viewModel)
         case .error(let message):
             setErrorState(message: message)
+        case .noCitySelected:
+            setNoCityState()
         }
     }
 }
