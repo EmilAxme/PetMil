@@ -24,8 +24,12 @@ final class CitySearchPresenter {
     private var searchWorkItem: DispatchWorkItem?
     private var searchTask: Task<Void, Never>?
     private var selectedCityPhotoTask: Task<Void, Never>?
-    
+
     private var filteredCities: [CitySearchModels.City] = []
+    private var searchCache: [String: [CitySearchModels.City]] = [:]
+
+    private let minQueryLength = 2
+    private let debounceInterval: TimeInterval = 0.25
     
     init(
         storage: SelectedCityStorageProtocol,
