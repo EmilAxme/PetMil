@@ -57,7 +57,7 @@ extension CitySearchPresenter: CitySearchPresenterProtocol {
         }
         
         searchWorkItem = workItem
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35, execute: workItem)
+        DispatchQueue.main.asyncAfter(deadline: .now() + debounceInterval, execute: workItem)
     }
     
     func didSelectCity(at index: Int) {
