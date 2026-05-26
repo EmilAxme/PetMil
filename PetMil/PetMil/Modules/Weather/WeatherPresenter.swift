@@ -10,6 +10,7 @@ import Foundation
 protocol WeatherPresenterProtocol: AnyObject {
     func viewWillAppear()
     func retryButtonTapped()
+    func refreshWeather()
 }
 
 final class WeatherPresenter {
