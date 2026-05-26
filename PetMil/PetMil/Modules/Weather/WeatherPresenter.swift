@@ -106,7 +106,16 @@ private extension WeatherPresenter {
         
     }
     
-    func makeViewModel(from forecast: Forecast, fallbackCity: String) -> WeatherModels.ViewModel {
+    func resolvePhotoURL(for city: SelectedCity) async -> URL? {
+        if let urlString = city.photoURLString, let url = URL(string: urlString) {
+            return url
+        }
+        let fallbackQuery = city.name.isEmpty ? "Moscow" : city.name
+        let preview = try? await unsplashSearchService.searchPhoto(for: fallbackQuery)
+        return preview?.imageURL
+    }
+
+    func makeViewModel(from forecast: Forecast, fallbackCity: String, backgroundPhotoURL: URL?) -> WeatherModels.ViewModel {
         let currentItem = forecast.items.first
         
         let currentTemperature = formattedTemperature(currentItem?.temperature)
@@ -136,6 +145,7 @@ private extension WeatherPresenter {
             currentTemperature: currentTemperature,
             currentDescription: currentDescription,
             currentIconCode: currentItem?.iconCode,
+            backgroundPhotoURL: backgroundPhotoURL,
             rows: rows
         )
     }
