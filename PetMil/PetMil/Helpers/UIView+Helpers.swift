@@ -14,3 +14,12 @@ extension UIView {
         subView.translatesAutoresizingMaskIntoConstraints = false
     }
 }
+
+extension UISearchBar {
+    func setRightView(_ view: UIView) {
+        if let searchField = value(forKey: "searchField") as? UITextField {
+            searchField.rightView = view
+            searchField.rightViewMode = .always
+        }
+    }
+}
