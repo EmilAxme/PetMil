@@ -73,6 +73,7 @@ private extension CitySearchPresenter {
         let trimmedText = text.trimmingCharacters(in: .whitespacesAndNewlines)
         
         guard !trimmedText.isEmpty else {
+            view?.displayLoading(false)
             filteredCities = []
             view?.displayCities(.init(cities: []))
             return
