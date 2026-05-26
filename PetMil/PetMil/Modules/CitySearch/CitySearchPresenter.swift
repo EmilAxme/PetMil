@@ -19,18 +19,22 @@ final class CitySearchPresenter {
     
     private let storage: SelectedCityStorageProtocol
     private let citySearchService: CitySearchServiceProtocol
+    private let unsplashSearchService: UnsplashSearchServiceProtocol
     
     private var searchWorkItem: DispatchWorkItem?
     private var searchTask: Task<Void, Never>?
+    private var selectedCityPhotoTask: Task<Void, Never>?
     
     private var filteredCities: [CitySearchModels.City] = []
     
     init(
         storage: SelectedCityStorageProtocol,
-        citySearchService: CitySearchServiceProtocol
+        citySearchService: CitySearchServiceProtocol,
+        unsplashSearchService: UnsplashSearchServiceProtocol
     ) {
         self.storage = storage
         self.citySearchService = citySearchService
+        self.unsplashSearchService = unsplashSearchService
     }
 }
 
@@ -56,12 +60,9 @@ extension CitySearchPresenter: CitySearchPresenterProtocol {
         guard filteredCities.indices.contains(index) else { return }
         
         let city = filteredCities[index]
-        storage.selectedCity = SelectedCity(
-            name: city.name,
-            country: city.country,
-            latitude: city.latitude,
-            longitude: city.longitude
-        )
+        
+        storage.selectedCity = makeSelectedCity(from: city, photoURLString: nil)
+        loadAndStorePhoto(for: city)
         
         view?.routeToWeatherScreen()
     }
@@ -96,6 +97,38 @@ private extension CitySearchPresenter {
                     self.filteredCities = []
                     self.view?.displayCities(.init(cities: []))
                 }
+            }
+        }
+    }
+    
+    func makeSelectedCity(from city: CitySearchModels.City, photoURLString: String?) -> SelectedCity {
+        SelectedCity(
+            name: city.name,
+            country: city.country,
+            latitude: city.latitude,
+            longitude: city.longitude,
+            photoURLString: photoURLString
+        )
+    }
+    
+    func loadAndStorePhoto(for city: CitySearchModels.City) {
+        selectedCityPhotoTask?.cancel()
+        
+        selectedCityPhotoTask = Task { [weak self] in
+            guard let self else { return }
+            
+            do {
+                let preview = try await unsplashSearchService.searchPhoto(for: city.name)
+                let updatedCity = makeSelectedCity(
+                    from: city,
+                    photoURLString: preview?.imageURL.absoluteString
+                )
+                
+                storage.selectedCity = updatedCity
+            } catch is CancellationError {
+                print("Selected city photo loading cancelled")
+            } catch {
+                print("Selected city photo loading error:", error.localizedDescription)
             }
         }
     }

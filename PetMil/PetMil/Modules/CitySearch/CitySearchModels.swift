@@ -18,13 +18,5 @@ enum CitySearchModels {
     
     struct ViewModel {
         let cities: [City]
-        let preview: Preview?
-    }
-    
-    struct Preview {
-        let imageURL: URL
-        let authorName: String
-        let authorProfileURL: URL
-        let photoPageURL: URL
     }
 }

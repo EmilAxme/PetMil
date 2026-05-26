@@ -16,10 +16,15 @@ enum CitySearchAssembly {
             networkClient: networkClient,
             apiKey: Secrets.openWeatherAPIKey
         )
-        
+        let unsplashSearchService = UnsplashSearchService(
+            networkClient: networkClient,
+            accessKey: Secrets.unsplashAccessKey
+        )
+
         let presenter = CitySearchPresenter(
             storage: SelectedCityStorage.shared,
-            citySearchService: citySearchService
+            citySearchService: citySearchService,
+            unsplashSearchService: unsplashSearchService
         )
         
         viewController.presenter = presenter
