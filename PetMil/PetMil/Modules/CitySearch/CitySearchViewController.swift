@@ -72,6 +72,7 @@ private extension CitySearchViewController {
         navigationItem.searchController = searchController
         navigationItem.hidesSearchBarWhenScrolling = false
         definesPresentationContext = true
+        searchController.searchBar.setRightView(searchLoadingIndicator)
     }
     
     func setupLayout() {
@@ -95,14 +96,22 @@ private extension CitySearchViewController {
 extension CitySearchViewController: CitySearchViewProtocol {
     func displayCities(_ viewModel: CitySearchModels.ViewModel) {
         cities = viewModel.cities
-        
+
         let isEmpty = cities.isEmpty
         cityTableView.isHidden = isEmpty
         emptyStateLabel.isHidden = !isEmpty
-        
+
         cityTableView.reloadData()
     }
-    
+
+    func displayLoading(_ isLoading: Bool) {
+        if isLoading {
+            searchLoadingIndicator.startAnimating()
+        } else {
+            searchLoadingIndicator.stopAnimating()
+        }
+    }
+
     func routeToWeatherScreen() {
         tabBarController?.selectedIndex = 1
     }
