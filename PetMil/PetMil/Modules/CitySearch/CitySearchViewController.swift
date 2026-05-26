@@ -40,6 +40,12 @@ final class CitySearchViewController: UIViewController {
         return tableView
     }()
     
+    private lazy var searchLoadingIndicator: UIActivityIndicatorView = {
+        let indicator = UIActivityIndicatorView(style: .medium)
+        indicator.hidesWhenStopped = true
+        return indicator
+    }()
+
     private lazy var emptyStateLabel: UILabel = {
         let label = UILabel()
         label.text = "Ничего не найдено,\nвидимо город скрыт за туманом..."
