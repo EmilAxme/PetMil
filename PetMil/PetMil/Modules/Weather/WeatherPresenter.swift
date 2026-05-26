@@ -87,7 +87,7 @@ private extension WeatherPresenter {
                 lastRequestedCity = nil
                 
                 await MainActor.run {
-                    self.view?.displayState(.error("Failed to load weather data"))
+                    self.view?.displayState(.error("Не удалось загрузить данные о погоде"))
                 }
                 
                 print("Weather loading error:", error.localizedDescription)
