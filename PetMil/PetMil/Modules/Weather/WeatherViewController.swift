@@ -37,6 +37,12 @@ final class WeatherViewController: UIViewController {
     
     private lazy var loadingView = WeatherLoadingView()
     
+    private lazy var refreshControl: UIRefreshControl = {
+        let control = UIRefreshControl()
+        control.addTarget(self, action: #selector(handleRefresh), for: .valueChanged)
+        return control
+    }()
+
     private lazy var weatherTableView: UITableView = {
         let tableView = UITableView(frame: .zero, style: .plain)
         tableView.dataSource = self
