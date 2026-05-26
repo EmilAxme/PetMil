@@ -12,6 +12,7 @@ enum WeatherModels {
         case loading
         case content(ViewModel)
         case error(String)
+        case noCitySelected
     }
     
     struct ViewModel {

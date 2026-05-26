@@ -37,6 +37,12 @@ final class WeatherViewController: UIViewController {
     
     private lazy var loadingView = WeatherLoadingView()
     
+    private lazy var refreshControl: UIRefreshControl = {
+        let control = UIRefreshControl()
+        control.addTarget(self, action: #selector(handleRefresh), for: .valueChanged)
+        return control
+    }()
+
     private lazy var weatherTableView: UITableView = {
         let tableView = UITableView(frame: .zero, style: .plain)
         tableView.dataSource = self
@@ -48,6 +54,7 @@ final class WeatherViewController: UIViewController {
         tableView.backgroundColor = .clear
         tableView.contentInset = UIEdgeInsets(top: 8, left: 0, bottom: 16, right: 0)
         tableView.register(ForecastDayCell.self, forCellReuseIdentifier: ForecastDayCell.reuseIdentifier)
+        tableView.refreshControl = refreshControl
         return tableView
     }()
     
@@ -57,6 +64,12 @@ final class WeatherViewController: UIViewController {
         view.onRetryTapped = { [weak self] in
             self?.presenter?.retryButtonTapped()
         }
+        return view
+    }()
+
+    private lazy var emptyCityView: WeatherEmptyCityView = {
+        let view = WeatherEmptyCityView()
+        view.isHidden = true
         return view
     }()
     
@@ -85,6 +98,7 @@ private extension WeatherViewController {
         view.addToView(contentContainerView)
         contentContainerView.addToView(weatherTableView)
         view.addToView(errorView)
+        view.addToView(emptyCityView)
         view.addToView(loadingView)
         
         NSLayoutConstraint.activate([
@@ -111,6 +125,11 @@ private extension WeatherViewController {
             errorView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             errorView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             errorView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+
+            emptyCityView.topAnchor.constraint(equalTo: view.topAnchor),
+            emptyCityView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            emptyCityView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            emptyCityView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
             
             loadingView.topAnchor.constraint(equalTo: view.topAnchor),
             loadingView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -125,6 +144,10 @@ private extension WeatherViewController {
         errorView.isHidden = true
         
         loadingView.show()
+    }
+
+    @objc func handleRefresh() {
+        presenter?.refreshWeather()
     }
 
     func setContentState(viewModel: WeatherModels.ViewModel) {
@@ -142,22 +165,33 @@ private extension WeatherViewController {
         )
         
         weatherTableView.reloadData()
-        
+        refreshControl.endRefreshing()
+
         headerView.isHidden = false
         contentContainerView.isHidden = false
         errorView.isHidden = true
-        
+
         loadingView.hideAnimated()
     }
 
     func setErrorState(message: String) {
         loadingView.isHidden = true
-        
+
         headerView.isHidden = true
         contentContainerView.isHidden = true
-        
+        emptyCityView.isHidden = true
+
         errorView.isHidden = false
         errorView.configure(message: message)
+    }
+
+    func setNoCityState() {
+        loadingView.isHidden = true
+        headerView.isHidden = true
+        contentContainerView.isHidden = true
+        errorView.isHidden = true
+
+        emptyCityView.isHidden = false
     }
 }
 
@@ -170,6 +204,8 @@ extension WeatherViewController: WeatherViewProtocol {
             setContentState(viewModel: viewModel)
         case .error(let message):
             setErrorState(message: message)
+        case .noCitySelected:
+            setNoCityState()
         }
     }
 }

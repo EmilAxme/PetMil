@@ -10,6 +10,7 @@ import Foundation
 protocol WeatherPresenterProtocol: AnyObject {
     func viewWillAppear()
     func retryButtonTapped()
+    func refreshWeather()
 }
 
 final class WeatherPresenter {
@@ -40,14 +41,24 @@ extension WeatherPresenter: WeatherPresenterProtocol {
     func retryButtonTapped() {
         updateWeather(forceReload: true)
     }
+
+    func refreshWeather() {
+        lastRequestedCity = nil
+        updateWeather(forceReload: true)
+    }
 }
 
 private extension WeatherPresenter {
     func updateWeather(forceReload: Bool) {
         weatherTask?.cancel()
-        
+
+        guard storage.hasSelectedCity else {
+            view?.displayState(.noCitySelected)
+            return
+        }
+
         let selectedCity = storage.selectedCity
-        
+
         guard selectedCity.name != lastRequestedCity else { return }
         lastRequestedCity = selectedCity.name
         
@@ -76,7 +87,7 @@ private extension WeatherPresenter {
                 lastRequestedCity = nil
                 
                 await MainActor.run {
-                    self.view?.displayState(.error("Failed to load weather data"))
+                    self.view?.displayState(.error("Не удалось загрузить данные о погоде"))
                 }
                 
                 print("Weather loading error:", error.localizedDescription)
@@ -89,7 +100,7 @@ private extension WeatherPresenter {
         let currentItem = forecast.items.first
         
         let currentTemperature = formattedTemperature(currentItem?.temperature)
-        let currentDescription = formattedDescription(currentItem?.description) ?? "No data"
+        let currentDescription = formattedDescription(currentItem?.description) ?? "Нет данных"
         
         let dailyForecasts = makeDailyForecasts(from: forecast, maxCount: 5)
         
@@ -155,17 +166,18 @@ private extension WeatherPresenter {
     
     func formattedDay(from date: Date) -> String {
         if Calendar.current.isDateInToday(date) {
-            return "Today"
+            return "Сегодня"
         }
-        
+
         if Calendar.current.isDateInTomorrow(date) {
-            return "Tomorrow"
+            return "Завтра"
         }
-        
+
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.locale = Locale(identifier: "ru_RU")
         formatter.dateFormat = "EEEE"
-        return formatter.string(from: date)
+        let weekday = formatter.string(from: date)
+        return weekday.prefix(1).uppercased() + weekday.dropFirst()
     }
     
     func formattedDescription(_ value: String?) -> String? {
