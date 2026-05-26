@@ -20,6 +20,7 @@ enum WeatherModels {
         let currentTemperature: String
         let currentDescription: String
         let currentIconCode: String?
+        let backgroundPhotoURL: URL?
         let rows: [ForecastRow]
     }
     
