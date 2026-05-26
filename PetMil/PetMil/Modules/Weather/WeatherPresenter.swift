@@ -100,7 +100,7 @@ private extension WeatherPresenter {
         let currentItem = forecast.items.first
         
         let currentTemperature = formattedTemperature(currentItem?.temperature)
-        let currentDescription = formattedDescription(currentItem?.description) ?? "No data"
+        let currentDescription = formattedDescription(currentItem?.description) ?? "Нет данных"
         
         let dailyForecasts = makeDailyForecasts(from: forecast, maxCount: 5)
         
