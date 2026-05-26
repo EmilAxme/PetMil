@@ -107,6 +107,8 @@ private extension WeatherViewController {
     }
     
     func setupLayout() {
+        view.addToView(backgroundPhotoView)
+        view.addToView(backgroundDimView)
         view.addToView(backgroundView)
         view.addToView(headerView)
         view.addToView(contentContainerView)
@@ -116,6 +118,16 @@ private extension WeatherViewController {
         view.addToView(loadingView)
         
         NSLayoutConstraint.activate([
+            backgroundPhotoView.topAnchor.constraint(equalTo: view.topAnchor),
+            backgroundPhotoView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            backgroundPhotoView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            backgroundPhotoView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+
+            backgroundDimView.topAnchor.constraint(equalTo: view.topAnchor),
+            backgroundDimView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            backgroundDimView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            backgroundDimView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+
             backgroundView.topAnchor.constraint(equalTo: view.topAnchor),
             backgroundView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             backgroundView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
