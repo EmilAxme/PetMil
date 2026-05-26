@@ -51,9 +51,14 @@ extension WeatherPresenter: WeatherPresenterProtocol {
 private extension WeatherPresenter {
     func updateWeather(forceReload: Bool) {
         weatherTask?.cancel()
-        
+
+        guard storage.hasSelectedCity else {
+            view?.displayState(.noCitySelected)
+            return
+        }
+
         let selectedCity = storage.selectedCity
-        
+
         guard selectedCity.name != lastRequestedCity else { return }
         lastRequestedCity = selectedCity.name
         
