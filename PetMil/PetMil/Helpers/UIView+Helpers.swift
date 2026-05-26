@@ -16,10 +16,15 @@ extension UIView {
 }
 
 extension UISearchBar {
-    func setRightView(_ view: UIView) {
-        if let searchField = value(forKey: "searchField") as? UITextField {
-            searchField.rightView = view
-            searchField.rightViewMode = .always
-        }
+    func showLoadingIndicator(_ indicator: UIActivityIndicatorView) {
+        searchTextField.rightView = indicator
+        searchTextField.rightViewMode = .always
+        indicator.startAnimating()
+    }
+
+    func hideLoadingIndicator(_ indicator: UIActivityIndicatorView) {
+        indicator.stopAnimating()
+        searchTextField.rightView = nil
+        searchTextField.rightViewMode = .never
     }
 }
