@@ -9,6 +9,7 @@ import UIKit
 
 protocol CitySearchViewProtocol: AnyObject {
     func displayCities(_ viewModel: CitySearchModels.ViewModel)
+    func displayLoading(_ isLoading: Bool)
     func routeToWeatherScreen()
 }
 
