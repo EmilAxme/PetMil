@@ -78,22 +78,26 @@ private extension CitySearchPresenter {
             return
         }
         
+        view?.displayLoading(true)
+
         searchTask = Task { [weak self] in
             guard let self else { return }
-            
+
             do {
                 let cities = try await citySearchService.searchCities(query: trimmedText)
                 self.filteredCities = cities
-                
+
                 await MainActor.run {
+                    self.view?.displayLoading(false)
                     self.view?.displayCities(.init(cities: cities))
                 }
             } catch is CancellationError {
                 print("City search cancelled")
             } catch {
                 print("City search error:", error.localizedDescription)
-                
+
                 await MainActor.run {
+                    self.view?.displayLoading(false)
                     self.filteredCities = []
                     self.view?.displayCities(.init(cities: []))
                 }
