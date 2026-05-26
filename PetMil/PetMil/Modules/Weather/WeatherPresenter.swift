@@ -41,6 +41,11 @@ extension WeatherPresenter: WeatherPresenterProtocol {
     func retryButtonTapped() {
         updateWeather(forceReload: true)
     }
+
+    func refreshWeather() {
+        lastRequestedCity = nil
+        updateWeather(forceReload: true)
+    }
 }
 
 private extension WeatherPresenter {
