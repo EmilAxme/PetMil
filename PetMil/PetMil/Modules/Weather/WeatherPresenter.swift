@@ -48,8 +48,8 @@ private extension WeatherPresenter {
         
         let selectedCity = storage.selectedCity
         
-        guard selectedCity != lastRequestedCity else { return }
-        lastRequestedCity = selectedCity
+        guard selectedCity.name != lastRequestedCity else { return }
+        lastRequestedCity = selectedCity.name
         
         view?.displayState(.loading)
         print("Loading weather for city:", selectedCity)
@@ -58,18 +58,14 @@ private extension WeatherPresenter {
             guard let self else { return }
             
             do {
-                let location = try await weatherService.fetchCityLocation(for: selectedCity)
-                
-                try Task.checkCancellation()
-                
                 let forecast = try await weatherService.fetchForecast(
-                    lat: location.latitude,
-                    lon: location.longitude
+                    lat: selectedCity.latitude,
+                    lon: selectedCity.longitude
                 )
                 
                 try Task.checkCancellation()
                 
-                let viewModel = makeViewModel(from: forecast, fallbackCity: selectedCity)
+                let viewModel = makeViewModel(from: forecast, fallbackCity: selectedCity.name)
                 
                 await MainActor.run {
                     self.view?.displayState(.content(viewModel))

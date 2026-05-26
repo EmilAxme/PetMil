@@ -9,7 +9,7 @@ import UIKit
 
 protocol CitySearchViewProtocol: AnyObject {
     func displayCities(_ viewModel: CitySearchModels.ViewModel)
-    func displaySelectedCity(_ cityName: String)
+    func routeToWeatherScreen()
 }
 
 final class CitySearchViewController: UIViewController {
@@ -96,7 +96,7 @@ extension CitySearchViewController: CitySearchViewProtocol {
         cityTableView.reloadData()
     }
     
-    func displaySelectedCity(_ cityName: String) {
+    func routeToWeatherScreen() {
         tabBarController?.selectedIndex = 1
     }
 }

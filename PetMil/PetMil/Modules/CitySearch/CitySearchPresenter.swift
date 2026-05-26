@@ -18,38 +18,34 @@ final class CitySearchPresenter {
     weak var view: CitySearchViewProtocol?
     
     private let storage: SelectedCityStorageProtocol
+    private let citySearchService: CitySearchServiceProtocol
+    private let unsplashSearchService: UnsplashSearchServiceProtocol
     
     private var searchWorkItem: DispatchWorkItem?
-    
-    private let allCities: [CitySearchModels.City] = [
-        .init(name: "Moscow", country: "Russia"),
-        .init(name: "Saint Petersburg", country: "Russia"),
-        .init(name: "Kazan", country: "Russia"),
-        .init(name: "Novosibirsk", country: "Russia"),
-        .init(name: "Yekaterinburg", country: "Russia"),
-        .init(name: "London", country: "United Kingdom"),
-        .init(name: "Paris", country: "France"),
-        .init(name: "Berlin", country: "Germany"),
-        .init(name: "Rome", country: "Italy"),
-        .init(name: "New York", country: "United States"),
-        .init(name: "Tokyo", country: "Japan")
-    ]
+    private var searchTask: Task<Void, Never>?
+    private var selectedCityPhotoTask: Task<Void, Never>?
     
     private var filteredCities: [CitySearchModels.City] = []
     
-    init(storage: SelectedCityStorageProtocol) {
+    init(
+        storage: SelectedCityStorageProtocol,
+        citySearchService: CitySearchServiceProtocol,
+        unsplashSearchService: UnsplashSearchServiceProtocol
+    ) {
         self.storage = storage
+        self.citySearchService = citySearchService
+        self.unsplashSearchService = unsplashSearchService
     }
 }
 
 extension CitySearchPresenter: CitySearchPresenterProtocol {
     func viewDidLoad() {
-        filteredCities = allCities
-        updateView()
+        view?.displayCities(.init(cities: []))
     }
     
     func didUpdateSearch(text: String) {
         searchWorkItem?.cancel()
+        searchTask?.cancel()
         
         let workItem = DispatchWorkItem { [weak self] in
             guard let self else { return }
@@ -64,31 +60,76 @@ extension CitySearchPresenter: CitySearchPresenterProtocol {
         guard filteredCities.indices.contains(index) else { return }
         
         let city = filteredCities[index]
-        storage.selectedCity = city.name
-        view?.displaySelectedCity(city.name)
+        
+        storage.selectedCity = makeSelectedCity(from: city, photoURLString: nil)
+        loadAndStorePhoto(for: city)
+        
+        view?.routeToWeatherScreen()
     }
 }
 
 private extension CitySearchPresenter {
-    func updateView() {
-        let viewModel = CitySearchModels.ViewModel(
-            cities: filteredCities
-        )
-        view?.displayCities(viewModel)
-    }
-    
     func applySearch(text: String) {
         let trimmedText = text.trimmingCharacters(in: .whitespacesAndNewlines)
         
-        if trimmedText.isEmpty {
-            filteredCities = allCities
-        } else {
-            filteredCities = allCities.filter {
-                $0.name.localizedCaseInsensitiveContains(trimmedText) ||
-                $0.country.localizedCaseInsensitiveContains(trimmedText)
-            }
+        guard !trimmedText.isEmpty else {
+            filteredCities = []
+            view?.displayCities(.init(cities: []))
+            return
         }
         
-        updateView()
+        searchTask = Task { [weak self] in
+            guard let self else { return }
+            
+            do {
+                let cities = try await citySearchService.searchCities(query: trimmedText)
+                self.filteredCities = cities
+                
+                await MainActor.run {
+                    self.view?.displayCities(.init(cities: cities))
+                }
+            } catch is CancellationError {
+                print("City search cancelled")
+            } catch {
+                print("City search error:", error.localizedDescription)
+                
+                await MainActor.run {
+                    self.filteredCities = []
+                    self.view?.displayCities(.init(cities: []))
+                }
+            }
+        }
+    }
+    
+    func makeSelectedCity(from city: CitySearchModels.City, photoURLString: String?) -> SelectedCity {
+        SelectedCity(
+            name: city.name,
+            country: city.country,
+            latitude: city.latitude,
+            longitude: city.longitude,
+            photoURLString: photoURLString
+        )
+    }
+    
+    func loadAndStorePhoto(for city: CitySearchModels.City) {
+        selectedCityPhotoTask?.cancel()
+        
+        selectedCityPhotoTask = Task { [weak self] in
+            guard let self else { return }
+            
+            do {
+                let preview = try await unsplashSearchService.searchPhoto(for: city.name)
+                let updatedCity = makeSelectedCity(
+                    from: city,
+                    photoURLString: preview?.imageURL.absoluteString
+                )
+                
+                storage.selectedCity = updatedCity
+            } catch is CancellationError {
+                print("Selected city photo loading cancelled")
+            } catch {
+                print("Selected city photo loading error:", error.localizedDescription)
+            }
+        }
     }
 }
