@@ -178,18 +178,20 @@ private extension WeatherViewController {
 
     func setContentState(viewModel: WeatherModels.ViewModel) {
         forecastRows = viewModel.rows
-        
+
         headerView.configure(
             city: viewModel.city,
             temperature: viewModel.currentTemperature,
             summary: viewModel.currentDescription
         )
-        
+
         weatherIconService?.loadIcon(
             into: headerView.iconImageView,
             iconCode: viewModel.currentIconCode
         )
-        
+
+        loadBackgroundPhoto(url: viewModel.backgroundPhotoURL)
+
         weatherTableView.reloadData()
         refreshControl.endRefreshing()
 
@@ -198,6 +200,34 @@ private extension WeatherViewController {
         errorView.isHidden = true
 
         loadingView.hideAnimated()
+    }
+
+    func loadBackgroundPhoto(url: URL?) {
+        backgroundPhotoTask?.cancel()
+
+        guard let url else {
+            backgroundPhotoView.image = nil
+            backgroundView.backgroundColor = .systemBlue.withAlphaComponent(0.15)
+            backgroundDimView.isHidden = true
+            return
+        }
+
+        backgroundDimView.isHidden = false
+
+        backgroundPhotoTask = Task { [weak self] in
+            guard let self else { return }
+            let image = await imageLoaderService?.loadImage(from: url)
+            await MainActor.run {
+                UIView.transition(
+                    with: self.backgroundPhotoView,
+                    duration: 0.4,
+                    options: .transitionCrossDissolve
+                ) {
+                    self.backgroundPhotoView.image = image
+                    self.backgroundView.backgroundColor = image != nil ? .clear : .systemBlue.withAlphaComponent(0.15)
+                }
+            }
+        }
     }
 
     func setErrorState(message: String) {
