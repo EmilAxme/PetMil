@@ -195,11 +195,18 @@ private extension WeatherViewController {
         weatherTableView.reloadData()
         refreshControl.endRefreshing()
 
+        headerView.alpha = 0
+        contentContainerView.alpha = 0
         headerView.isHidden = false
         contentContainerView.isHidden = false
         errorView.isHidden = true
 
-        loadingView.hideAnimated()
+        loadingView.hideAnimated {
+            UIView.animate(withDuration: 0.4, delay: 0, options: .curveEaseOut) {
+                self.headerView.alpha = 1
+                self.contentContainerView.alpha = 1
+            }
+        }
     }
 
     func loadBackgroundPhoto(url: URL?) {
