@@ -22,13 +22,16 @@ final class WeatherPresenter {
     
     private let storage: SelectedCityStorageProtocol
     private let weatherService: WeatherServiceProtocol
-    
+    private let unsplashSearchService: UnsplashSearchServiceProtocol
+
     init(
         storage: SelectedCityStorageProtocol,
-        weatherService: WeatherServiceProtocol
+        weatherService: WeatherServiceProtocol,
+        unsplashSearchService: UnsplashSearchServiceProtocol
     ) {
         self.storage = storage
         self.weatherService = weatherService
+        self.unsplashSearchService = unsplashSearchService
     }
 }
 
