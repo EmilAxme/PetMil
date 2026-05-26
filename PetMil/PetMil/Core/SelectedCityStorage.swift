@@ -17,6 +17,7 @@ struct SelectedCity: Codable {
 
 protocol SelectedCityStorageProtocol: AnyObject {
     var selectedCity: SelectedCity { get set }
+    var hasSelectedCity: Bool { get }
 }
 
 final class SelectedCityStorage: SelectedCityStorageProtocol {
@@ -51,6 +52,10 @@ final class SelectedCityStorage: SelectedCityStorageProtocol {
         }
     }
     
+    var hasSelectedCity: Bool {
+        userDefaults.data(forKey: selectedCityKey) != nil
+    }
+
     private init(userDefaults: UserDefaults = .standard) {
         self.userDefaults = userDefaults
     }
