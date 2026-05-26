@@ -14,11 +14,25 @@ protocol WeatherViewProtocol: AnyObject {
 final class WeatherViewController: UIViewController {
     
     var presenter: WeatherPresenterProtocol?
-    
     var weatherIconService: WeatherIconServiceProtocol?
-    
+    var imageLoaderService: ImageLoaderServiceProtocol?
+
     private var forecastRows: [WeatherModels.ForecastRow] = []
-    
+    private var backgroundPhotoTask: Task<Void, Never>?
+
+    private lazy var backgroundPhotoView: UIImageView = {
+        let imageView = UIImageView()
+        imageView.contentMode = .scaleAspectFill
+        imageView.clipsToBounds = true
+        return imageView
+    }()
+
+    private lazy var backgroundDimView: UIView = {
+        let view = UIView()
+        view.backgroundColor = .black.withAlphaComponent(0.35)
+        return view
+    }()
+
     private lazy var backgroundView: UIView = {
         let view = UIView()
         view.backgroundColor = .systemBlue.withAlphaComponent(0.15)
