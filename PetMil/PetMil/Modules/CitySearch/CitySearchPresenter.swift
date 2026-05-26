@@ -75,14 +75,21 @@ extension CitySearchPresenter: CitySearchPresenterProtocol {
 private extension CitySearchPresenter {
     func applySearch(text: String) {
         let trimmedText = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        
-        guard !trimmedText.isEmpty else {
+
+        guard trimmedText.count >= minQueryLength else {
             view?.displayLoading(false)
             filteredCities = []
             view?.displayCities(.init(cities: []))
             return
         }
-        
+
+        let cacheKey = trimmedText.lowercased()
+        if let cached = searchCache[cacheKey] {
+            filteredCities = cached
+            view?.displayCities(.init(cities: cached))
+            return
+        }
+
         view?.displayLoading(true)
 
         searchTask = Task { [weak self] in
@@ -91,6 +98,7 @@ private extension CitySearchPresenter {
             do {
                 let cities = try await citySearchService.searchCities(query: trimmedText)
                 self.filteredCities = cities
+                self.searchCache[cacheKey] = cities
 
                 await MainActor.run {
                     self.view?.displayLoading(false)
