@@ -54,6 +54,7 @@ final class WeatherViewController: UIViewController {
         tableView.backgroundColor = .clear
         tableView.contentInset = UIEdgeInsets(top: 8, left: 0, bottom: 16, right: 0)
         tableView.register(ForecastDayCell.self, forCellReuseIdentifier: ForecastDayCell.reuseIdentifier)
+        tableView.refreshControl = refreshControl
         return tableView
     }()
     
@@ -133,6 +134,10 @@ private extension WeatherViewController {
         loadingView.show()
     }
 
+    @objc func handleRefresh() {
+        presenter?.refreshWeather()
+    }
+
     func setContentState(viewModel: WeatherModels.ViewModel) {
         forecastRows = viewModel.rows
         
@@ -148,11 +153,12 @@ private extension WeatherViewController {
         )
         
         weatherTableView.reloadData()
-        
+        refreshControl.endRefreshing()
+
         headerView.isHidden = false
         contentContainerView.isHidden = false
         errorView.isHidden = true
-        
+
         loadingView.hideAnimated()
     }
 
