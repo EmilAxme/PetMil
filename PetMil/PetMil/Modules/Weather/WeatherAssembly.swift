@@ -16,11 +16,16 @@ enum WeatherAssembly {
             networkClient: networkClient,
             apiKey: Secrets.openWeatherAPIKey
         )
+        let unsplashSearchService = UnsplashSearchService(
+            networkClient: networkClient,
+            accessKey: Secrets.unsplashAccessKey
+        )
         let weatherIconService = WeatherIconService()
-        
+
         let presenter = WeatherPresenter(
             storage: SelectedCityStorage.shared,
-            weatherService: weatherService
+            weatherService: weatherService,
+            unsplashSearchService: unsplashSearchService
         )
         
         viewController.presenter = presenter
