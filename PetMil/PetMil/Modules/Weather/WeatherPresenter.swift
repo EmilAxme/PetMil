@@ -166,17 +166,18 @@ private extension WeatherPresenter {
     
     func formattedDay(from date: Date) -> String {
         if Calendar.current.isDateInToday(date) {
-            return "Today"
+            return "Сегодня"
         }
-        
+
         if Calendar.current.isDateInTomorrow(date) {
-            return "Tomorrow"
+            return "Завтра"
         }
-        
+
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.locale = Locale(identifier: "ru_RU")
         formatter.dateFormat = "EEEE"
-        return formatter.string(from: date)
+        let weekday = formatter.string(from: date)
+        return weekday.prefix(1).uppercased() + weekday.dropFirst()
     }
     
     func formattedDescription(_ value: String?) -> String? {
