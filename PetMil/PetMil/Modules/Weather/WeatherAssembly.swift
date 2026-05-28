@@ -26,7 +26,8 @@ enum WeatherAssembly {
         let presenter = WeatherPresenter(
             city: city,
             weatherService: weatherService,
-            unsplashSearchService: unsplashSearchService
+            unsplashSearchService: unsplashSearchService,
+            cacheRepository: ForecastCacheRepository()
         )
 
         viewController.presenter = presenter
