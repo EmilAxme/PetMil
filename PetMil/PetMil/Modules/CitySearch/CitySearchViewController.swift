@@ -8,7 +8,7 @@
 import UIKit
 
 protocol CitySearchViewProtocol: AnyObject {
-    func displayCities(_ viewModel: CitySearchModels.ViewModel)
+    func displayList(_ content: CitySearchModels.ListContent)
     func displayLoading(_ isLoading: Bool)
     func displayLocationLoading(_ isLoading: Bool)
     func displayLocationError(_ message: String)
@@ -16,10 +16,10 @@ protocol CitySearchViewProtocol: AnyObject {
 }
 
 final class CitySearchViewController: UIViewController {
-    
+
     var presenter: CitySearchPresenterProtocol?
-    
-    private var cities: [CitySearchModels.City] = []
+
+    private var listContent: CitySearchModels.ListContent = .empty(message: "")
     
     private lazy var searchController: UISearchController = {
         let controller = UISearchController(searchResultsController: nil)
@@ -74,6 +74,11 @@ final class CitySearchViewController: UIViewController {
         setupCurrentLocationHeader()
         presenter?.viewDidLoad()
     }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        presenter?.viewWillAppear()
+    }
 }
 
 private extension CitySearchViewController {
@@ -124,13 +129,17 @@ private extension CitySearchViewController {
 }
 
 extension CitySearchViewController: CitySearchViewProtocol {
-    func displayCities(_ viewModel: CitySearchModels.ViewModel) {
-        cities = viewModel.cities
-
-        let hasResults = !cities.isEmpty
-        cityTableView.isHidden = false
-        emptyStateLabel.isHidden = hasResults || (searchController.searchBar.text ?? "").isEmpty
-
+    func displayList(_ content: CitySearchModels.ListContent) {
+        listContent = content
+        switch content {
+        case .savedCities, .searchResults:
+            cityTableView.isHidden = false
+            emptyStateLabel.isHidden = true
+        case .empty(let message):
+            cityTableView.isHidden = false
+            emptyStateLabel.text = message
+            emptyStateLabel.isHidden = message.isEmpty
+        }
         cityTableView.reloadData()
     }
 
@@ -159,26 +168,55 @@ extension CitySearchViewController: CitySearchViewProtocol {
 
 extension CitySearchViewController: UITableViewDataSource, UITableViewDelegate {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return cities.count
+        switch listContent {
+        case .savedCities(let rows): return rows.count
+        case .searchResults(let cities): return cities.count
+        case .empty: return 0
+        }
     }
-    
+
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        
         guard let cell = tableView.dequeueReusableCell(
             withIdentifier: CityResultCell.reuseIdentifier,
             for: indexPath
         ) as? CityResultCell else {
             return UITableViewCell()
         }
-        
-        cell.configure(with: cities[indexPath.row])
-        
+
+        switch listContent {
+        case .savedCities(let rows):
+            cell.configure(with: rows[indexPath.row])
+        case .searchResults(let cities):
+            cell.configure(with: cities[indexPath.row])
+        case .empty:
+            break
+        }
         return cell
     }
-    
+
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
-        presenter?.didSelectCity(at: indexPath.row)
+        switch listContent {
+        case .savedCities:
+            presenter?.didSelectSavedCity(at: indexPath.row)
+        case .searchResults:
+            presenter?.didSelectCity(at: indexPath.row)
+        case .empty:
+            break
+        }
+    }
+
+    func tableView(
+        _ tableView: UITableView,
+        trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath
+    ) -> UISwipeActionsConfiguration? {
+        guard case .savedCities = listContent else { return nil }
+
+        let delete = UIContextualAction(style: .destructive, title: "Удалить") { [weak self] _, _, completion in
+            self?.presenter?.didDeleteSavedCity(at: indexPath.row)
+            completion(true)
+        }
+        return UISwipeActionsConfiguration(actions: [delete])
     }
 }
 

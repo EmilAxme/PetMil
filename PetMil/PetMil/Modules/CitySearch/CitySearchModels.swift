@@ -15,8 +15,20 @@ enum CitySearchModels {
         let latitude: Double
         let longitude: Double
     }
-    
+
     struct ViewModel {
         let cities: [City]
+    }
+
+    enum ListContent {
+        case savedCities([SavedRow])
+        case searchResults([City])
+        case empty(message: String)
+    }
+
+    struct SavedRow {
+        let name: String
+        let countryOrLocation: String
+        let isCurrentLocation: Bool
     }
 }

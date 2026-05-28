@@ -9,8 +9,11 @@ import Foundation
 
 protocol CitySearchPresenterProtocol: AnyObject {
     func viewDidLoad()
+    func viewWillAppear()
     func didUpdateSearch(text: String)
     func didSelectCity(at index: Int)
+    func didSelectSavedCity(at index: Int)
+    func didDeleteSavedCity(at index: Int)
     func didTapCurrentLocation()
 }
 
@@ -52,9 +55,13 @@ final class CitySearchPresenter {
 
 extension CitySearchPresenter: CitySearchPresenterProtocol {
     func viewDidLoad() {
-        view?.displayCities(.init(cities: []))
+        displayCurrentList(searchText: "")
     }
-    
+
+    func viewWillAppear() {
+        displayCurrentList(searchText: "")
+    }
+
     func didUpdateSearch(text: String) {
         searchWorkItem?.cancel()
         searchTask?.cancel()
@@ -77,6 +84,18 @@ extension CitySearchPresenter: CitySearchPresenterProtocol {
         loadAndStorePhoto(for: city)
 
         view?.routeToWeatherScreen()
+    }
+
+    func didSelectSavedCity(at index: Int) {
+        guard cityListStorage.cities.indices.contains(index) else { return }
+        cityListStorage.activeIndex = index
+        view?.routeToWeatherScreen()
+    }
+
+    func didDeleteSavedCity(at index: Int) {
+        guard cityListStorage.cities.indices.contains(index) else { return }
+        cityListStorage.removeCity(at: index)
+        displayCurrentList(searchText: "")
     }
 
     func didTapCurrentLocation() {
@@ -139,14 +158,14 @@ private extension CitySearchPresenter {
         guard trimmedText.count >= minQueryLength else {
             view?.displayLoading(false)
             filteredCities = []
-            view?.displayCities(.init(cities: []))
+            displayCurrentList(searchText: trimmedText)
             return
         }
 
         let cacheKey = trimmedText.lowercased()
         if let cached = searchCache[cacheKey] {
             filteredCities = cached
-            view?.displayCities(.init(cities: cached))
+            view?.displayList(.searchResults(cached))
             return
         }
 
@@ -162,7 +181,7 @@ private extension CitySearchPresenter {
 
                 await MainActor.run {
                     self.view?.displayLoading(false)
-                    self.view?.displayCities(.init(cities: cities))
+                    self.view?.displayList(.searchResults(cities))
                 }
             } catch is CancellationError {
                 print("City search cancelled")
@@ -172,9 +191,37 @@ private extension CitySearchPresenter {
                 await MainActor.run {
                     self.view?.displayLoading(false)
                     self.filteredCities = []
-                    self.view?.displayCities(.init(cities: []))
+                    self.view?.displayList(.empty(message: "Не удалось найти города"))
                 }
             }
+        }
+    }
+
+    func displayCurrentList(searchText: String) {
+        let trimmed = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.isEmpty else {
+            view?.displayList(.searchResults(filteredCities))
+            return
+        }
+
+        let savedRows = cityListStorage.cities.map { city -> CitySearchModels.SavedRow in
+            let location: String
+            if city.country.isEmpty {
+                location = city.isCurrentLocation ? "Текущая локация" : ""
+            } else {
+                location = city.country
+            }
+            return CitySearchModels.SavedRow(
+                name: city.name,
+                countryOrLocation: location,
+                isCurrentLocation: city.isCurrentLocation
+            )
+        }
+
+        if savedRows.isEmpty {
+            view?.displayList(.empty(message: ""))
+        } else {
+            view?.displayList(.savedCities(savedRows))
         }
     }
     
