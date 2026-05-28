@@ -13,41 +13,50 @@ protocol DayDetailsPresenterProtocol: AnyObject {
 }
 
 final class DayDetailsPresenter {
-    
+
     weak var view: DayDetailsViewProtocol?
-    
+
     private let dayForecast: DailyForecast
+    private let formatter: UnitFormatterProtocol
+    private let l10n: L10n
     private var chartPoints: [DayDetailsModels.ChartPoint] = []
-    
-    init(dayForecast: DailyForecast) {
+
+    init(
+        dayForecast: DailyForecast,
+        formatter: UnitFormatterProtocol,
+        l10n: L10n = .shared
+    ) {
         self.dayForecast = dayForecast
+        self.formatter = formatter
+        self.l10n = l10n
     }
 }
 
 extension DayDetailsPresenter: DayDetailsPresenterProtocol {
     func viewDidLoad() {
         chartPoints = dayForecast.hourlyItems.map { item in
-            DayDetailsModels.ChartPoint(
-                timeText: formattedTime(from: item.date),
-                temperatureText: "\(Int(item.temperature.rounded()))°",
-                feelsLikeText: "\(Int(item.feelsLike.rounded()))°",
-                humidityText: "\(item.humidity)%",
-                windText: "\(Int(item.windSpeed.rounded())) m/s",
-                pressureText: "\(item.pressure) hPa",
+            let pressureFormatted = formatter.pressure(item.pressure)
+            return DayDetailsModels.ChartPoint(
+                timeText: formatter.clockTime(item.date),
+                temperatureText: formatter.temperature(item.temperature),
+                feelsLikeText: formatter.temperature(item.feelsLike),
+                humidityText: formatter.humidity(item.humidity),
+                windText: formatter.windSpeed(item.windSpeed),
+                pressureText: "\(pressureFormatted.value) \(pressureFormatted.unit)",
                 rawTemperature: item.temperature
             )
         }
-        
+
         guard let firstPoint = chartPoints.first else { return }
-        
+
         let viewModel = DayDetailsModels.ViewModel(
             dayText: formattedDay(from: dayForecast.date),
-            temperatureText: "\(Int(dayForecast.currentTemperature.rounded()))°",
+            temperatureText: formatter.temperature(dayForecast.currentTemperature),
             descriptionText: dayForecast.summary,
             chartPoints: chartPoints,
             selectedPoint: firstPoint
         )
-        
+
         view?.displayDayDetails(viewModel: viewModel)
     }
     
@@ -58,23 +67,9 @@ extension DayDetailsPresenter: DayDetailsPresenterProtocol {
 }
 
 private extension DayDetailsPresenter {
-    func formattedTime(from date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm"
-        return formatter.string(from: date)
-    }
-    
     func formattedDay(from date: Date) -> String {
-        if Calendar.current.isDateInToday(date) {
-            return "Today"
-        }
-        
-        if Calendar.current.isDateInTomorrow(date) {
-            return "Tomorrow"
-        }
-        
-        let formatter = DateFormatter()
-        formatter.dateFormat = "EEEE"
-        return formatter.string(from: date)
+        if Calendar.current.isDateInToday(date) { return l10n.today }
+        if Calendar.current.isDateInTomorrow(date) { return l10n.tomorrow }
+        return formatter.weekday(from: date)
     }
 }
