@@ -69,7 +69,8 @@ extension OpenWeatherEndpoint: Endpoint {
                 URLQueryItem(name: "lat", value: String(lat)),
                 URLQueryItem(name: "lon", value: String(lon)),
                 URLQueryItem(name: "appid", value: apiKey),
-                URLQueryItem(name: "units", value: "metric")
+                URLQueryItem(name: "units", value: "metric"),
+                URLQueryItem(name: "lang", value: L10n.shared.language.rawValue)
             ]
 
         case let .forecast(lat, lon, apiKey):
@@ -77,7 +78,8 @@ extension OpenWeatherEndpoint: Endpoint {
                 URLQueryItem(name: "lat", value: String(lat)),
                 URLQueryItem(name: "lon", value: String(lon)),
                 URLQueryItem(name: "appid", value: apiKey),
-                URLQueryItem(name: "units", value: "metric")
+                URLQueryItem(name: "units", value: "metric"),
+                URLQueryItem(name: "lang", value: L10n.shared.language.rawValue)
             ]
         }
     }
