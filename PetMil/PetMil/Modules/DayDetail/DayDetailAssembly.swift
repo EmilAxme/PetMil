@@ -10,11 +10,12 @@ import UIKit
 enum DayDetailsAssembly {
     static func build(dayForecast: DailyForecast) -> UIViewController {
         let viewController = DayDetailsViewController()
-        let presenter = DayDetailsPresenter(dayForecast: dayForecast)
-        
+        let formatter = UnitFormatter(preferences: SettingsStorage.shared.preferences)
+        let presenter = DayDetailsPresenter(dayForecast: dayForecast, formatter: formatter)
+
         viewController.presenter = presenter
         presenter.view = viewController
-        
+
         return viewController
     }
 }
