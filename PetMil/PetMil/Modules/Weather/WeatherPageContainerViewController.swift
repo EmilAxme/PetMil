@@ -158,7 +158,11 @@ private extension WeatherPageContainerViewController {
 
     @objc
     func cityListChanged() {
-        rebuildPages()
+        let currentCount = pageControllers.count
+        let storedCount = max(cityListStorage.cities.count, 1)
+        if currentCount != storedCount {
+            rebuildPages()
+        }
     }
 
     @objc
