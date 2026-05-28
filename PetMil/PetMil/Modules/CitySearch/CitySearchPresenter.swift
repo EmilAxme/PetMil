@@ -124,7 +124,8 @@ private extension CitySearchPresenter {
             country: city.country,
             latitude: city.latitude,
             longitude: city.longitude,
-            photoURLString: photoURLString
+            photoURLString: photoURLString,
+            isCurrentLocation: false
         )
     }
     
