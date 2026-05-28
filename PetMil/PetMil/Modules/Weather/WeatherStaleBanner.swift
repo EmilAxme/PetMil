@@ -46,10 +46,10 @@ final class WeatherStaleBanner: UIView {
 
     func configure(fetchedAt: Date) {
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "ru_RU")
+        formatter.locale = L10n.shared.locale
         formatter.dateFormat = "HH:mm"
         let time = formatter.string(from: fetchedAt)
-        label.text = "Нет сети · обновлено в \(time)"
+        label.text = L10n.shared.staleBanner(time: time)
     }
 }
 

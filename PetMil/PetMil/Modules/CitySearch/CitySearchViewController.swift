@@ -24,7 +24,7 @@ final class CitySearchViewController: UIViewController {
     private lazy var searchController: UISearchController = {
         let controller = UISearchController(searchResultsController: nil)
         controller.obscuresBackgroundDuringPresentation = false
-        controller.searchBar.placeholder = "Search city"
+        controller.searchBar.placeholder = L10n.shared.searchCityPlaceholder
         controller.searchResultsUpdater = self
         return controller
     }()
@@ -58,7 +58,7 @@ final class CitySearchViewController: UIViewController {
 
     private lazy var emptyStateLabel: UILabel = {
         let label = UILabel()
-        label.text = "Ничего не найдено,\nвидимо город скрыт за туманом..."
+        label.text = L10n.shared.nothingFound
         label.font = .systemFont(ofSize: 20, weight: .medium)
         label.textColor = .secondaryLabel
         label.textAlignment = .center
@@ -83,7 +83,7 @@ final class CitySearchViewController: UIViewController {
 
 private extension CitySearchViewController {
     func setupAppearance() {
-        title = "Search City"
+        title = L10n.shared.searchCityTitle
         view.backgroundColor = .systemBackground
         navigationItem.searchController = searchController
         navigationItem.hidesSearchBarWhenScrolling = false
@@ -157,7 +157,7 @@ extension CitySearchViewController: CitySearchViewProtocol {
 
     func displayLocationError(_ message: String) {
         let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        alert.addAction(UIAlertAction(title: L10n.shared.ok, style: .default))
         present(alert, animated: true)
     }
 
@@ -212,7 +212,7 @@ extension CitySearchViewController: UITableViewDataSource, UITableViewDelegate {
     ) -> UISwipeActionsConfiguration? {
         guard case .savedCities = listContent else { return nil }
 
-        let delete = UIContextualAction(style: .destructive, title: "Удалить") { [weak self] _, _, completion in
+        let delete = UIContextualAction(style: .destructive, title: L10n.shared.delete) { [weak self] _, _, completion in
             self?.presenter?.didDeleteSavedCity(at: indexPath.row)
             completion(true)
         }

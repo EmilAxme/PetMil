@@ -85,11 +85,11 @@ final class DayDetailsViewController: UIViewController {
         return view
     }()
     
-    private lazy var temperatureRow = makeDetailRow(title: "Temperature")
-    private lazy var feelsLikeRow = makeDetailRow(title: "Feels like")
-    private lazy var humidityRow = makeDetailRow(title: "Humidity")
-    private lazy var windRow = makeDetailRow(title: "Wind")
-    private lazy var pressureRow = makeDetailRow(title: "Pressure")
+    private lazy var temperatureRow = makeDetailRow(title: L10n.shared.temperature)
+    private lazy var feelsLikeRow = makeDetailRow(title: L10n.shared.feelsLike)
+    private lazy var humidityRow = makeDetailRow(title: L10n.shared.humidity)
+    private lazy var windRow = makeDetailRow(title: L10n.shared.wind)
+    private lazy var pressureRow = makeDetailRow(title: L10n.shared.pressure)
     
     private lazy var detailsStackView: UIStackView = {
         let stack = UIStackView(arrangedSubviews: [
@@ -143,7 +143,7 @@ final class DayDetailsViewController: UIViewController {
 private extension DayDetailsViewController {
     func setupAppearance() {
         view.backgroundColor = .systemBackground
-        title = "Details"
+        title = L10n.shared.details
     }
     
     func setupLayout() {
@@ -201,7 +201,7 @@ private extension DayDetailsViewController {
 
 extension DayDetailsViewController: DayDetailsViewProtocol {
     func displaySelectedChartPoint(_ point: DayDetailsModels.ChartPoint) {
-        selectedTimeLabel.text = "Time: \(point.timeText)"
+        selectedTimeLabel.text = "\(L10n.shared.time): \(point.timeText)"
         temperatureRow.configure(value: point.temperatureText)
         feelsLikeRow.configure(value: point.feelsLikeText)
         humidityRow.configure(value: point.humidityText)

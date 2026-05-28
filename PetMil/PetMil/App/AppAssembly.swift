@@ -20,13 +20,13 @@ enum AppAssembly {
         let citySearchNavigationController = UINavigationController(rootViewController: citySearchViewController)
 
         weatherNavigationController.tabBarItem = UITabBarItem(
-            title: "Weather",
+            title: L10n.shared.weatherTabTitle,
             image: UIImage(systemName: "cloud.sun.fill"),
             selectedImage: UIImage(systemName: "cloud.sun.fill")
         )
 
         citySearchNavigationController.tabBarItem = UITabBarItem(
-            title: "Search City",
+            title: L10n.shared.searchTabTitle,
             image: UIImage(systemName: "magnifyingglass"),
             selectedImage: UIImage(systemName: "magnifyingglass")
         )

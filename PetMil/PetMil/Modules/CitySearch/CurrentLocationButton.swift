@@ -32,7 +32,7 @@ final class CurrentLocationButton: UIControl {
         let label = UILabel()
         label.font = .systemFont(ofSize: 17, weight: .semibold)
         label.textColor = .systemBlue
-        label.text = "Использовать мою локацию"
+        label.text = L10n.shared.useMyLocation
         return label
     }()
 
@@ -64,11 +64,11 @@ final class CurrentLocationButton: UIControl {
         if isLoading {
             loadingIndicator.startAnimating()
             iconImageView.isHidden = true
-            titleLabel.text = "Определяем локацию…"
+            titleLabel.text = L10n.shared.locating
         } else {
             loadingIndicator.stopAnimating()
             iconImageView.isHidden = false
-            titleLabel.text = "Использовать мою локацию"
+            titleLabel.text = L10n.shared.useMyLocation
         }
         isEnabled = !isLoading
     }

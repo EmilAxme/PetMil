@@ -19,7 +19,7 @@ final class WeatherEmptyCityView: UIView {
 
     private lazy var titleLabel: UILabel = {
         let label = UILabel()
-        label.text = "Город не выбран"
+        label.text = L10n.shared.cityNotSelectedTitle
         label.font = .systemFont(ofSize: 20, weight: .semibold)
         label.textAlignment = .center
         label.textColor = .label
@@ -28,7 +28,7 @@ final class WeatherEmptyCityView: UIView {
 
     private lazy var subtitleLabel: UILabel = {
         let label = UILabel()
-        label.text = "Перейди на вкладку поиска\nи выбери город"
+        label.text = L10n.shared.cityNotSelectedSubtitle
         label.font = .systemFont(ofSize: 15)
         label.textAlignment = .center
         label.textColor = .secondaryLabel

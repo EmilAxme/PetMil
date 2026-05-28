@@ -134,17 +134,13 @@ extension CitySearchPresenter: CitySearchPresenterProtocol {
             } catch LocationError.permissionDenied {
                 await MainActor.run {
                     self.view?.displayLocationLoading(false)
-                    self.view?.displayLocationError(
-                        "Доступ к геолокации запрещён. Разрешите его в Настройках → PetMil."
-                    )
+                    self.view?.displayLocationError(L10n.shared.locationAccessDenied)
                 }
             } catch {
                 print("Current location error:", error.localizedDescription)
                 await MainActor.run {
                     self.view?.displayLocationLoading(false)
-                    self.view?.displayLocationError(
-                        "Не удалось определить локацию. Попробуйте ещё раз."
-                    )
+                    self.view?.displayLocationError(L10n.shared.locationFailed)
                 }
             }
         }
@@ -191,7 +187,7 @@ private extension CitySearchPresenter {
                 await MainActor.run {
                     self.view?.displayLoading(false)
                     self.filteredCities = []
-                    self.view?.displayList(.empty(message: "Не удалось найти города"))
+                    self.view?.displayList(.empty(message: L10n.shared.nothingFound))
                 }
             }
         }
@@ -207,7 +203,7 @@ private extension CitySearchPresenter {
         let savedRows = cityListStorage.cities.map { city -> CitySearchModels.SavedRow in
             let location: String
             if city.country.isEmpty {
-                location = city.isCurrentLocation ? "Текущая локация" : ""
+                location = city.isCurrentLocation ? L10n.shared.locationUsageDescription : ""
             } else {
                 location = city.country
             }
