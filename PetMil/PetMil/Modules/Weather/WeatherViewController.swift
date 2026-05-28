@@ -48,7 +48,9 @@ final class WeatherViewController: UIViewController {
     }()
     
     private lazy var headerView = WeatherHeaderView()
-    
+
+    private lazy var hourlyForecastView = HourlyForecastView()
+
     private lazy var loadingView = WeatherLoadingView()
     
     private lazy var refreshControl: UIRefreshControl = {
@@ -91,6 +93,7 @@ final class WeatherViewController: UIViewController {
         super.viewDidLoad()
         setupAppearance()
         setupLayout()
+        hourlyForecastView.weatherIconService = weatherIconService
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -111,12 +114,13 @@ private extension WeatherViewController {
         view.addToView(backgroundDimView)
         view.addToView(backgroundView)
         view.addToView(headerView)
+        view.addToView(hourlyForecastView)
         view.addToView(contentContainerView)
         contentContainerView.addToView(weatherTableView)
         view.addToView(errorView)
         view.addToView(emptyCityView)
         view.addToView(loadingView)
-        
+
         NSLayoutConstraint.activate([
             backgroundPhotoView.topAnchor.constraint(equalTo: view.topAnchor),
             backgroundPhotoView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -132,12 +136,16 @@ private extension WeatherViewController {
             backgroundView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             backgroundView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             backgroundView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            
+
             headerView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 12),
             headerView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             headerView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
-            
-            contentContainerView.topAnchor.constraint(equalTo: headerView.bottomAnchor, constant: 16),
+
+            hourlyForecastView.topAnchor.constraint(equalTo: headerView.bottomAnchor, constant: 12),
+            hourlyForecastView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            hourlyForecastView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+
+            contentContainerView.topAnchor.constraint(equalTo: hourlyForecastView.bottomAnchor, constant: 12),
             contentContainerView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             contentContainerView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
             contentContainerView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -12),
@@ -166,9 +174,10 @@ private extension WeatherViewController {
     
     func setLoadingState() {
         headerView.isHidden = true
+        hourlyForecastView.isHidden = true
         contentContainerView.isHidden = true
         errorView.isHidden = true
-        
+
         loadingView.show()
     }
 
@@ -190,20 +199,28 @@ private extension WeatherViewController {
             iconCode: viewModel.currentIconCode
         )
 
+        hourlyForecastView.configure(with: viewModel.hourlyRows)
+
         loadBackgroundPhoto(url: viewModel.backgroundPhotoURL)
 
         weatherTableView.reloadData()
         refreshControl.endRefreshing()
 
+        let hasHourly = !viewModel.hourlyRows.isEmpty
+
         headerView.alpha = 0
+        hourlyForecastView.alpha = 0
         contentContainerView.alpha = 0
         headerView.isHidden = false
+        hourlyForecastView.isHidden = !hasHourly
         contentContainerView.isHidden = false
         errorView.isHidden = true
+        emptyCityView.isHidden = true
 
         loadingView.hideAnimated {
             UIView.animate(withDuration: 0.4, delay: 0, options: .curveEaseOut) {
                 self.headerView.alpha = 1
+                self.hourlyForecastView.alpha = 1
                 self.contentContainerView.alpha = 1
             }
         }
@@ -241,6 +258,7 @@ private extension WeatherViewController {
         loadingView.isHidden = true
 
         headerView.isHidden = true
+        hourlyForecastView.isHidden = true
         contentContainerView.isHidden = true
         emptyCityView.isHidden = true
 
@@ -251,6 +269,7 @@ private extension WeatherViewController {
     func setNoCityState() {
         loadingView.isHidden = true
         headerView.isHidden = true
+        hourlyForecastView.isHidden = true
         contentContainerView.isHidden = true
         errorView.isHidden = true
 
