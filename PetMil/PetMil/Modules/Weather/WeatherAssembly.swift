@@ -8,9 +8,9 @@
 import UIKit
 
 enum WeatherAssembly {
-    static func build() -> UIViewController {
+    static func build(for city: SelectedCity?) -> WeatherViewController {
         let viewController = WeatherViewController()
-        
+
         let networkClient = NetworkClient()
         let weatherService = WeatherService(
             networkClient: networkClient,
@@ -24,16 +24,16 @@ enum WeatherAssembly {
         let imageLoaderService = ImageLoaderService()
 
         let presenter = WeatherPresenter(
-            storage: SelectedCityStorage.shared,
+            city: city,
             weatherService: weatherService,
             unsplashSearchService: unsplashSearchService
         )
-        
+
         viewController.presenter = presenter
         viewController.weatherIconService = weatherIconService
         viewController.imageLoaderService = imageLoaderService
         presenter.view = viewController
-        
+
         return viewController
     }
 }

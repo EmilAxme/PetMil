@@ -27,7 +27,7 @@ enum CitySearchAssembly {
         let locationService = LocationService()
 
         let presenter = CitySearchPresenter(
-            storage: SelectedCityStorage.shared,
+            cityListStorage: CityListStorage.shared,
             citySearchService: citySearchService,
             unsplashSearchService: unsplashSearchService,
             locationService: locationService,

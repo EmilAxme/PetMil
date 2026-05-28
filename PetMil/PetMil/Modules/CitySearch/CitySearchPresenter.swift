@@ -18,7 +18,7 @@ final class CitySearchPresenter {
 
     weak var view: CitySearchViewProtocol?
 
-    private let storage: SelectedCityStorageProtocol
+    private let cityListStorage: CityListStorageProtocol
     private let citySearchService: CitySearchServiceProtocol
     private let unsplashSearchService: UnsplashSearchServiceProtocol
     private let locationService: LocationServiceProtocol
@@ -36,13 +36,13 @@ final class CitySearchPresenter {
     private let debounceInterval: TimeInterval = 0.25
 
     init(
-        storage: SelectedCityStorageProtocol,
+        cityListStorage: CityListStorageProtocol,
         citySearchService: CitySearchServiceProtocol,
         unsplashSearchService: UnsplashSearchServiceProtocol,
         locationService: LocationServiceProtocol,
         weatherService: WeatherServiceProtocol
     ) {
-        self.storage = storage
+        self.cityListStorage = cityListStorage
         self.citySearchService = citySearchService
         self.unsplashSearchService = unsplashSearchService
         self.locationService = locationService
@@ -72,8 +72,8 @@ extension CitySearchPresenter: CitySearchPresenterProtocol {
         guard filteredCities.indices.contains(index) else { return }
 
         let city = filteredCities[index]
-
-        storage.selectedCity = makeSelectedCity(from: city, photoURLString: nil)
+        let selected = makeSelectedCity(from: city, photoURLString: nil)
+        cityListStorage.appendCity(selected)
         loadAndStorePhoto(for: city)
 
         view?.routeToWeatherScreen()
@@ -103,7 +103,7 @@ extension CitySearchPresenter: CitySearchPresenterProtocol {
                     isCurrentLocation: true
                 )
 
-                storage.selectedCity = currentLocationCity
+                cityListStorage.upsertCurrentLocation(currentLocationCity)
                 loadAndStorePhoto(forCurrentLocation: currentLocationCity)
 
                 await MainActor.run {
@@ -197,12 +197,17 @@ private extension CitySearchPresenter {
 
             do {
                 let preview = try await unsplashSearchService.searchPhoto(for: city.name)
+
+                guard let index = cityListStorage.cities.lastIndex(where: {
+                    $0.name == city.name && abs($0.latitude - city.latitude) < 0.0001
+                }) else { return }
+
                 let updatedCity = makeSelectedCity(
                     from: city,
                     photoURLString: preview?.imageURL.absoluteString
                 )
 
-                storage.selectedCity = updatedCity
+                cityListStorage.updateCity(at: index, updatedCity)
             } catch is CancellationError {
                 print("Selected city photo loading cancelled")
             } catch {
@@ -227,7 +232,7 @@ private extension CitySearchPresenter {
                     photoURLString: preview?.imageURL.absoluteString,
                     isCurrentLocation: true
                 )
-                storage.selectedCity = updated
+                cityListStorage.upsertCurrentLocation(updated)
             } catch is CancellationError {
                 print("Current location photo loading cancelled")
             } catch {

@@ -14,22 +14,22 @@ protocol WeatherPresenterProtocol: AnyObject {
 }
 
 final class WeatherPresenter {
-    
+
     weak var view: WeatherViewProtocol?
-    
+
+    private let city: SelectedCity?
     private var lastRequestedCity: String?
     private var weatherTask: Task<Void, Never>?
-    
-    private let storage: SelectedCityStorageProtocol
+
     private let weatherService: WeatherServiceProtocol
     private let unsplashSearchService: UnsplashSearchServiceProtocol
 
     init(
-        storage: SelectedCityStorageProtocol,
+        city: SelectedCity?,
         weatherService: WeatherServiceProtocol,
         unsplashSearchService: UnsplashSearchServiceProtocol
     ) {
-        self.storage = storage
+        self.city = city
         self.weatherService = weatherService
         self.unsplashSearchService = unsplashSearchService
     }
@@ -40,7 +40,7 @@ extension WeatherPresenter: WeatherPresenterProtocol {
     func viewWillAppear() {
         updateWeather(forceReload: false)
     }
-    
+
     func retryButtonTapped() {
         updateWeather(forceReload: true)
     }
@@ -55,16 +55,14 @@ private extension WeatherPresenter {
     func updateWeather(forceReload: Bool) {
         weatherTask?.cancel()
 
-        guard storage.hasSelectedCity else {
+        guard let selectedCity = city else {
             view?.displayState(.noCitySelected)
             return
         }
 
-        let selectedCity = storage.selectedCity
-
         guard selectedCity.name != lastRequestedCity else { return }
         lastRequestedCity = selectedCity.name
-        
+
         view?.displayState(.loading)
         print("Loading weather for city:", selectedCity)
         
