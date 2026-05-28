@@ -27,7 +27,8 @@ enum WeatherAssembly {
             city: city,
             weatherService: weatherService,
             unsplashSearchService: unsplashSearchService,
-            cacheRepository: ForecastCacheRepository()
+            cacheRepository: ForecastCacheRepository(),
+            formatter: UnitFormatter(preferences: SettingsStorage.shared.preferences)
         )
 
         viewController.presenter = presenter

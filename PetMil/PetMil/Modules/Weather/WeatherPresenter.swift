@@ -24,6 +24,8 @@ final class WeatherPresenter {
     private let weatherService: WeatherServiceProtocol
     private let unsplashSearchService: UnsplashSearchServiceProtocol
     private let cacheRepository: ForecastCacheRepositoryProtocol
+    private let formatter: UnitFormatterProtocol
+    private let l10n: L10n
 
     private let freshCacheTTL: TimeInterval = 10 * 60
     private let staleCacheTTL: TimeInterval = 24 * 60 * 60
@@ -32,12 +34,16 @@ final class WeatherPresenter {
         city: SelectedCity?,
         weatherService: WeatherServiceProtocol,
         unsplashSearchService: UnsplashSearchServiceProtocol,
-        cacheRepository: ForecastCacheRepositoryProtocol
+        cacheRepository: ForecastCacheRepositoryProtocol,
+        formatter: UnitFormatterProtocol,
+        l10n: L10n = .shared
     ) {
         self.city = city
         self.weatherService = weatherService
         self.unsplashSearchService = unsplashSearchService
         self.cacheRepository = cacheRepository
+        self.formatter = formatter
+        self.l10n = l10n
     }
 }
 
@@ -154,7 +160,7 @@ private extension WeatherPresenter {
                     }
                 } else {
                     await MainActor.run {
-                        self.view?.displayState(.error("Не удалось загрузить данные о погоде"))
+                        self.view?.displayState(.error(self.l10n.weatherLoadFailed))
                     }
                 }
 
@@ -191,24 +197,25 @@ private extension WeatherPresenter {
     ) -> WeatherModels.ViewModel {
         let currentItem = forecast.items.first
 
-        let currentTemperature = formattedTemperature(currentWeather?.temperature ?? currentItem?.temperature)
-        let currentDescription = formattedDescription(currentWeather?.description ?? currentItem?.description) ?? "Нет данных"
+        let currentTemperature = formatter.temperature(currentWeather?.temperature ?? currentItem?.temperature)
+        let currentDescription = formattedDescription(currentWeather?.description ?? currentItem?.description) ?? l10n.noData
         let currentIconCode = currentWeather?.iconCode ?? currentItem?.iconCode
 
         let dailyForecasts = makeDailyForecasts(from: forecast, maxCount: 5)
 
         let rows = dailyForecasts.map { dayForecast in
             let representativeItem = bestItemForDay(dayForecast.hourlyItems)
+            let pressureFormatted = formatter.pressure(representativeItem?.pressure ?? 0)
 
             return WeatherModels.ForecastRow(
                 dayText: formattedDay(from: dayForecast.date),
-                maxTemperatureText: formattedTemperature(dayForecast.maxTemperature),
-                minTemperatureText: formattedTemperature(dayForecast.minTemperature),
+                maxTemperatureText: formatter.temperature(dayForecast.maxTemperature),
+                minTemperatureText: formatter.temperature(dayForecast.minTemperature),
                 descriptionText: formattedDescription(representativeItem?.description) ?? dayForecast.summary,
-                humidityText: "\(representativeItem?.humidity ?? 0)%",
-                windText: "\(Int((representativeItem?.windSpeed ?? 0).rounded())) m/s",
-                feelsLikeText: formattedTemperature(representativeItem?.feelsLike),
-                pressureText: "\(representativeItem?.pressure ?? 0) hPa",
+                humidityText: formatter.humidity(representativeItem?.humidity ?? 0),
+                windText: formatter.windSpeed(representativeItem?.windSpeed ?? 0),
+                feelsLikeText: formatter.temperature(representativeItem?.feelsLike),
+                pressureText: "\(pressureFormatted.value) \(pressureFormatted.unit)",
                 iconCode: representativeItem?.iconCode,
                 dailyForecast: dayForecast
             )
@@ -240,8 +247,8 @@ private extension WeatherPresenter {
         if let humidity {
             tiles.append(.init(
                 symbolName: "humidity.fill",
-                title: "Влажность",
-                value: "\(humidity)%",
+                title: l10n.humidity,
+                value: formatter.humidity(humidity),
                 subtitle: nil
             ))
         }
@@ -249,60 +256,47 @@ private extension WeatherPresenter {
         if let windSpeed {
             tiles.append(.init(
                 symbolName: "wind",
-                title: "Ветер",
-                value: "\(Int(windSpeed.rounded())) м/с",
-                subtitle: currentWeather?.windDirectionDegrees.map(compassDirection(from:))
+                title: l10n.wind,
+                value: formatter.windSpeed(windSpeed),
+                subtitle: currentWeather?.windDirectionDegrees.map { l10n.compassDirection(degrees: $0) }
             ))
         }
 
         if let feelsLike {
             tiles.append(.init(
                 symbolName: "thermometer.medium",
-                title: "Ощущается",
-                value: formattedTemperature(feelsLike),
+                title: l10n.feelsLike,
+                value: formatter.temperature(feelsLike),
                 subtitle: nil
             ))
         }
 
         if let pressure {
+            let pressureFormatted = formatter.pressure(pressure)
             tiles.append(.init(
                 symbolName: "gauge.with.dots.needle.50percent",
-                title: "Давление",
-                value: "\(pressure)",
-                subtitle: "гПа"
+                title: l10n.pressure,
+                value: pressureFormatted.value,
+                subtitle: pressureFormatted.unit
             ))
         }
 
         if let current = currentWeather {
             tiles.append(.init(
                 symbolName: "sunrise.fill",
-                title: "Восход",
-                value: formattedClockTime(current.sunrise),
+                title: l10n.sunrise,
+                value: formatter.clockTime(current.sunrise),
                 subtitle: nil
             ))
             tiles.append(.init(
                 symbolName: "sunset.fill",
-                title: "Закат",
-                value: formattedClockTime(current.sunset),
+                title: l10n.sunset,
+                value: formatter.clockTime(current.sunset),
                 subtitle: nil
             ))
         }
 
         return tiles
-    }
-
-    func formattedClockTime(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "ru_RU")
-        formatter.dateFormat = "HH:mm"
-        return formatter.string(from: date)
-    }
-
-    func compassDirection(from degrees: Int) -> String {
-        let normalized = ((degrees % 360) + 360) % 360
-        let directions = ["С", "СВ", "В", "ЮВ", "Ю", "ЮЗ", "З", "СЗ"]
-        let index = Int(((Double(normalized) + 22.5) / 45.0).rounded(.down)) % directions.count
-        return directions[index]
     }
 
     func makeHourlyRows(from items: [ForecastItem], maxCount: Int) -> [WeatherModels.HourlyRow] {
@@ -313,7 +307,7 @@ private extension WeatherPresenter {
         return source.prefix(maxCount).enumerated().map { index, item in
             WeatherModels.HourlyRow(
                 timeText: formattedHour(from: item.date, isFirst: index == 0),
-                temperatureText: formattedTemperature(item.temperature),
+                temperatureText: formatter.temperature(item.temperature),
                 iconCode: item.iconCode,
                 precipitationText: formattedPrecipitation(item.precipitationProbability)
             )
@@ -321,15 +315,10 @@ private extension WeatherPresenter {
     }
 
     func formattedHour(from date: Date, isFirst: Bool) -> String {
-        let calendar = Calendar.current
         if isFirst && abs(date.timeIntervalSinceNow) < 90 * 60 {
-            return "Сейчас"
+            return l10n.now
         }
-
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "ru_RU")
-        formatter.dateFormat = "HH:mm"
-        return formatter.string(from: date)
+        return formatter.clockTime(date)
     }
 
     func formattedPrecipitation(_ value: Double?) -> String? {
@@ -366,25 +355,10 @@ private extension WeatherPresenter {
         return Array(dailyForecasts.prefix(maxCount))
     }
     
-    func formattedTemperature(_ value: Double?) -> String {
-        guard let value else { return "--°" }
-        return "\(Int(value.rounded()))°"
-    }
-    
     func formattedDay(from date: Date) -> String {
-        if Calendar.current.isDateInToday(date) {
-            return "Сегодня"
-        }
-
-        if Calendar.current.isDateInTomorrow(date) {
-            return "Завтра"
-        }
-
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "ru_RU")
-        formatter.dateFormat = "EEEE"
-        let weekday = formatter.string(from: date)
-        return weekday.prefix(1).uppercased() + weekday.dropFirst()
+        if Calendar.current.isDateInToday(date) { return l10n.today }
+        if Calendar.current.isDateInTomorrow(date) { return l10n.tomorrow }
+        return formatter.weekday(from: date)
     }
     
     func formattedDescription(_ value: String?) -> String? {
