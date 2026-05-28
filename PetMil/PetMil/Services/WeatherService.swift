@@ -11,6 +11,7 @@ protocol WeatherServiceProtocol: AnyObject {
     func fetchCityLocation(for city: String) async throws -> CityLocation
     func reverseGeocode(lat: Double, lon: Double) async throws -> CityLocation
     func fetchForecast(lat: Double, lon: Double) async throws -> Forecast
+    func fetchCurrentWeather(lat: Double, lon: Double) async throws -> CurrentWeather
 }
 
 final class WeatherService: WeatherServiceProtocol {
@@ -60,6 +61,28 @@ extension WeatherService {
         )
     }
     
+    func fetchCurrentWeather(lat: Double, lon: Double) async throws -> CurrentWeather {
+        let endpoint = OpenWeatherEndpoint.currentWeather(lat: lat, lon: lon, apiKey: apiKey)
+        let response = try await networkClient.request(endpoint, type: CurrentWeatherResponseDTO.self)
+
+        let weather = response.weather.first
+
+        return CurrentWeather(
+            temperature: response.main.temp,
+            feelsLike: response.main.feelsLike,
+            pressure: response.main.pressure,
+            humidity: response.main.humidity,
+            windSpeed: response.wind.speed,
+            windDirectionDegrees: response.wind.deg,
+            cloudiness: response.clouds?.all,
+            visibilityMeters: response.visibility,
+            sunrise: Date(timeIntervalSince1970: response.sys.sunrise),
+            sunset: Date(timeIntervalSince1970: response.sys.sunset),
+            description: weather?.description ?? "",
+            iconCode: weather?.icon ?? ""
+        )
+    }
+
     func fetchForecast(lat: Double, lon: Double) async throws -> Forecast {
             let endpoint = OpenWeatherEndpoint.forecast(lat: lat, lon: lon, apiKey: apiKey)
             let response = try await networkClient.request(endpoint, type: ForecastResponseDTO.self)
