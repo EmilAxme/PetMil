@@ -77,13 +77,22 @@ private extension WeatherPresenter {
                     lon: selectedCity.longitude
                 )
                 async let photoURLTask = resolvePhotoURL(for: selectedCity)
+                async let currentWeatherTask = fetchCurrentWeatherOptional(
+                    lat: selectedCity.latitude,
+                    lon: selectedCity.longitude
+                )
 
-                let (forecast, photoURL) = try await (forecastTask, photoURLTask)
+                let (forecast, photoURL, currentWeather) = try await (
+                    forecastTask,
+                    photoURLTask,
+                    currentWeatherTask
+                )
 
                 try Task.checkCancellation()
 
                 let viewModel = makeViewModel(
                     from: forecast,
+                    currentWeather: currentWeather,
                     fallbackCity: selectedCity.name,
                     backgroundPhotoURL: photoURL
                 )
@@ -103,7 +112,11 @@ private extension WeatherPresenter {
                 print("Weather loading error:", error.localizedDescription)
             }
         }
-        
+
+    }
+
+    func fetchCurrentWeatherOptional(lat: Double, lon: Double) async -> CurrentWeather? {
+        try? await weatherService.fetchCurrentWeather(lat: lat, lon: lon)
     }
     
     func resolvePhotoURL(for city: SelectedCity) async -> URL? {
@@ -115,11 +128,17 @@ private extension WeatherPresenter {
         return preview?.imageURL
     }
 
-    func makeViewModel(from forecast: Forecast, fallbackCity: String, backgroundPhotoURL: URL?) -> WeatherModels.ViewModel {
+    func makeViewModel(
+        from forecast: Forecast,
+        currentWeather: CurrentWeather?,
+        fallbackCity: String,
+        backgroundPhotoURL: URL?
+    ) -> WeatherModels.ViewModel {
         let currentItem = forecast.items.first
 
-        let currentTemperature = formattedTemperature(currentItem?.temperature)
-        let currentDescription = formattedDescription(currentItem?.description) ?? "Нет данных"
+        let currentTemperature = formattedTemperature(currentWeather?.temperature ?? currentItem?.temperature)
+        let currentDescription = formattedDescription(currentWeather?.description ?? currentItem?.description) ?? "Нет данных"
+        let currentIconCode = currentWeather?.iconCode ?? currentItem?.iconCode
 
         let dailyForecasts = makeDailyForecasts(from: forecast, maxCount: 5)
 
@@ -141,16 +160,94 @@ private extension WeatherPresenter {
         }
 
         let hourlyRows = makeHourlyRows(from: forecast.items, maxCount: 12)
+        let conditionTiles = makeConditionTiles(currentWeather: currentWeather, fallbackItem: currentItem)
 
         return WeatherModels.ViewModel(
             city: forecast.cityName.isEmpty ? fallbackCity : forecast.cityName,
             currentTemperature: currentTemperature,
             currentDescription: currentDescription,
-            currentIconCode: currentItem?.iconCode,
+            currentIconCode: currentIconCode,
             backgroundPhotoURL: backgroundPhotoURL,
             hourlyRows: hourlyRows,
+            conditionTiles: conditionTiles,
             rows: rows
         )
+    }
+
+    func makeConditionTiles(currentWeather: CurrentWeather?, fallbackItem: ForecastItem?) -> [WeatherModels.ConditionTile] {
+        let humidity = currentWeather?.humidity ?? fallbackItem?.humidity
+        let feelsLike = currentWeather?.feelsLike ?? fallbackItem?.feelsLike
+        let pressure = currentWeather?.pressure ?? fallbackItem?.pressure
+        let windSpeed = currentWeather?.windSpeed ?? fallbackItem?.windSpeed
+
+        var tiles: [WeatherModels.ConditionTile] = []
+
+        if let humidity {
+            tiles.append(.init(
+                symbolName: "humidity.fill",
+                title: "Влажность",
+                value: "\(humidity)%",
+                subtitle: nil
+            ))
+        }
+
+        if let windSpeed {
+            tiles.append(.init(
+                symbolName: "wind",
+                title: "Ветер",
+                value: "\(Int(windSpeed.rounded())) м/с",
+                subtitle: currentWeather?.windDirectionDegrees.map(compassDirection(from:))
+            ))
+        }
+
+        if let feelsLike {
+            tiles.append(.init(
+                symbolName: "thermometer.medium",
+                title: "Ощущается",
+                value: formattedTemperature(feelsLike),
+                subtitle: nil
+            ))
+        }
+
+        if let pressure {
+            tiles.append(.init(
+                symbolName: "gauge.with.dots.needle.50percent",
+                title: "Давление",
+                value: "\(pressure)",
+                subtitle: "гПа"
+            ))
+        }
+
+        if let current = currentWeather {
+            tiles.append(.init(
+                symbolName: "sunrise.fill",
+                title: "Восход",
+                value: formattedClockTime(current.sunrise),
+                subtitle: nil
+            ))
+            tiles.append(.init(
+                symbolName: "sunset.fill",
+                title: "Закат",
+                value: formattedClockTime(current.sunset),
+                subtitle: nil
+            ))
+        }
+
+        return tiles
+    }
+
+    func formattedClockTime(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "ru_RU")
+        formatter.dateFormat = "HH:mm"
+        return formatter.string(from: date)
+    }
+
+    func compassDirection(from degrees: Int) -> String {
+        let normalized = ((degrees % 360) + 360) % 360
+        let directions = ["С", "СВ", "В", "ЮВ", "Ю", "ЮЗ", "З", "СЗ"]
+        let index = Int(((Double(normalized) + 22.5) / 45.0).rounded(.down)) % directions.count
+        return directions[index]
     }
 
     func makeHourlyRows(from items: [ForecastItem], maxCount: Int) -> [WeatherModels.HourlyRow] {

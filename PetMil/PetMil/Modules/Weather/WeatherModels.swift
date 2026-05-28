@@ -22,7 +22,15 @@ enum WeatherModels {
         let currentIconCode: String?
         let backgroundPhotoURL: URL?
         let hourlyRows: [HourlyRow]
+        let conditionTiles: [ConditionTile]
         let rows: [ForecastRow]
+    }
+
+    struct ConditionTile {
+        let symbolName: String
+        let title: String
+        let value: String
+        let subtitle: String?
     }
 
     struct ForecastRow {

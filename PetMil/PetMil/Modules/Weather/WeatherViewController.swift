@@ -51,6 +51,8 @@ final class WeatherViewController: UIViewController {
 
     private lazy var hourlyForecastView = HourlyForecastView()
 
+    private lazy var conditionGridView = ConditionGridView()
+
     private lazy var loadingView = WeatherLoadingView()
     
     private lazy var refreshControl: UIRefreshControl = {
@@ -93,7 +95,13 @@ final class WeatherViewController: UIViewController {
         super.viewDidLoad()
         setupAppearance()
         setupLayout()
+        setupTableHeaderView()
         hourlyForecastView.weatherIconService = weatherIconService
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        layoutTableHeaderIfNeeded()
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -171,7 +179,37 @@ private extension WeatherViewController {
             loadingView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
     }
-    
+
+    func setupTableHeaderView() {
+        let container = UIView()
+        container.addSubview(conditionGridView)
+        conditionGridView.translatesAutoresizingMaskIntoConstraints = false
+
+        NSLayoutConstraint.activate([
+            conditionGridView.topAnchor.constraint(equalTo: container.topAnchor, constant: 8),
+            conditionGridView.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 16),
+            conditionGridView.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -16),
+            conditionGridView.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -12)
+        ])
+
+        weatherTableView.tableHeaderView = container
+    }
+
+    func layoutTableHeaderIfNeeded() {
+        guard let header = weatherTableView.tableHeaderView else { return }
+        let targetWidth = weatherTableView.bounds.width
+        guard targetWidth > 0 else { return }
+
+        let size = header.systemLayoutSizeFitting(
+            CGSize(width: targetWidth, height: UIView.layoutFittingCompressedSize.height)
+        )
+
+        if abs(header.frame.height - size.height) > 0.5 || header.frame.width != targetWidth {
+            header.frame = CGRect(x: 0, y: 0, width: targetWidth, height: size.height)
+            weatherTableView.tableHeaderView = header
+        }
+    }
+
     func setLoadingState() {
         headerView.isHidden = true
         hourlyForecastView.isHidden = true
@@ -200,6 +238,9 @@ private extension WeatherViewController {
         )
 
         hourlyForecastView.configure(with: viewModel.hourlyRows)
+
+        conditionGridView.configure(with: viewModel.conditionTiles)
+        layoutTableHeaderIfNeeded()
 
         loadBackgroundPhoto(url: viewModel.backgroundPhotoURL)
 
