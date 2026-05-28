@@ -117,15 +117,15 @@ private extension WeatherPresenter {
 
     func makeViewModel(from forecast: Forecast, fallbackCity: String, backgroundPhotoURL: URL?) -> WeatherModels.ViewModel {
         let currentItem = forecast.items.first
-        
+
         let currentTemperature = formattedTemperature(currentItem?.temperature)
         let currentDescription = formattedDescription(currentItem?.description) ?? "Нет данных"
-        
+
         let dailyForecasts = makeDailyForecasts(from: forecast, maxCount: 5)
-        
+
         let rows = dailyForecasts.map { dayForecast in
             let representativeItem = bestItemForDay(dayForecast.hourlyItems)
-            
+
             return WeatherModels.ForecastRow(
                 dayText: formattedDay(from: dayForecast.date),
                 maxTemperatureText: formattedTemperature(dayForecast.maxTemperature),
@@ -139,15 +139,50 @@ private extension WeatherPresenter {
                 dailyForecast: dayForecast
             )
         }
-        
+
+        let hourlyRows = makeHourlyRows(from: forecast.items, maxCount: 12)
+
         return WeatherModels.ViewModel(
             city: forecast.cityName.isEmpty ? fallbackCity : forecast.cityName,
             currentTemperature: currentTemperature,
             currentDescription: currentDescription,
             currentIconCode: currentItem?.iconCode,
             backgroundPhotoURL: backgroundPhotoURL,
+            hourlyRows: hourlyRows,
             rows: rows
         )
+    }
+
+    func makeHourlyRows(from items: [ForecastItem], maxCount: Int) -> [WeatherModels.HourlyRow] {
+        let now = Date()
+        let upcoming = items.filter { $0.date >= now.addingTimeInterval(-30 * 60) }
+        let source = upcoming.isEmpty ? items : upcoming
+
+        return source.prefix(maxCount).enumerated().map { index, item in
+            WeatherModels.HourlyRow(
+                timeText: formattedHour(from: item.date, isFirst: index == 0),
+                temperatureText: formattedTemperature(item.temperature),
+                iconCode: item.iconCode,
+                precipitationText: formattedPrecipitation(item.precipitationProbability)
+            )
+        }
+    }
+
+    func formattedHour(from date: Date, isFirst: Bool) -> String {
+        let calendar = Calendar.current
+        if isFirst && abs(date.timeIntervalSinceNow) < 90 * 60 {
+            return "Сейчас"
+        }
+
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "ru_RU")
+        formatter.dateFormat = "HH:mm"
+        return formatter.string(from: date)
+    }
+
+    func formattedPrecipitation(_ value: Double?) -> String? {
+        guard let value, value >= 0.1 else { return nil }
+        return "\(Int((value * 100).rounded()))%"
     }
     
     func makeDailyForecasts(from forecast: Forecast, maxCount: Int) -> [DailyForecast] {

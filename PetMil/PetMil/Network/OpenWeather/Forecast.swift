@@ -22,4 +22,5 @@ struct ForecastItem {
     let title: String
     let description: String
     let iconCode: String
+    let precipitationProbability: Double?
 }

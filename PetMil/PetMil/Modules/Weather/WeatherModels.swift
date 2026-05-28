@@ -21,9 +21,10 @@ enum WeatherModels {
         let currentDescription: String
         let currentIconCode: String?
         let backgroundPhotoURL: URL?
+        let hourlyRows: [HourlyRow]
         let rows: [ForecastRow]
     }
-    
+
     struct ForecastRow {
         let dayText: String
         let maxTemperatureText: String
@@ -35,5 +36,12 @@ enum WeatherModels {
         let pressureText: String
         let iconCode: String?
         let dailyForecast: DailyForecast
+    }
+
+    struct HourlyRow {
+        let timeText: String
+        let temperatureText: String
+        let iconCode: String?
+        let precipitationText: String?
     }
 }

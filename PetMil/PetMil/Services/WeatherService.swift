@@ -57,7 +57,8 @@ extension WeatherService {
                     windSpeed: $0.wind.speed,
                     title: $0.weather.first?.main ?? "",
                     description: $0.weather.first?.description ?? "",
-                    iconCode: $0.weather.first?.icon ?? ""
+                    iconCode: $0.weather.first?.icon ?? "",
+                    precipitationProbability: $0.pop
                 )
             }
             
