@@ -7,12 +7,12 @@
 
 import Foundation
 
-struct Forecast {
+struct Forecast: Codable {
     let cityName: String
     let items: [ForecastItem]
 }
 
-struct ForecastItem {
+struct ForecastItem: Codable {
     let date: Date
     let temperature: Double
     let feelsLike: Double
