@@ -23,15 +23,21 @@ final class WeatherPresenter {
 
     private let weatherService: WeatherServiceProtocol
     private let unsplashSearchService: UnsplashSearchServiceProtocol
+    private let cacheRepository: ForecastCacheRepositoryProtocol
+
+    private let freshCacheTTL: TimeInterval = 10 * 60
+    private let staleCacheTTL: TimeInterval = 24 * 60 * 60
 
     init(
         city: SelectedCity?,
         weatherService: WeatherServiceProtocol,
-        unsplashSearchService: UnsplashSearchServiceProtocol
+        unsplashSearchService: UnsplashSearchServiceProtocol,
+        cacheRepository: ForecastCacheRepositoryProtocol
     ) {
         self.city = city
         self.weatherService = weatherService
         self.unsplashSearchService = unsplashSearchService
+        self.cacheRepository = cacheRepository
     }
 }
 
@@ -60,10 +66,33 @@ private extension WeatherPresenter {
             return
         }
 
-        guard selectedCity.name != lastRequestedCity else { return }
+        if !forceReload, selectedCity.name == lastRequestedCity { return }
         lastRequestedCity = selectedCity.name
 
-        view?.displayState(.loading)
+        let cacheKey = makeCacheKey(for: selectedCity)
+        let cached = cacheRepository.loadCached(for: cacheKey)
+        let now = Date()
+
+        if let cached, !forceReload {
+            let age = now.timeIntervalSince(cached.fetchedAt)
+            let viewModel = makeViewModel(
+                from: cached.payload.forecast,
+                currentWeather: cached.payload.currentWeather,
+                fallbackCity: cached.payload.cityName,
+                backgroundPhotoURL: nil
+            )
+
+            if age < freshCacheTTL {
+                view?.displayState(.content(viewModel))
+            } else if age < staleCacheTTL {
+                view?.displayState(.stale(viewModel, fetchedAt: cached.fetchedAt))
+            } else {
+                view?.displayState(.loading)
+            }
+        } else {
+            view?.displayState(.loading)
+        }
+
         print("Loading weather for city:", selectedCity)
         
         weatherTask = Task { [weak self] in
@@ -95,6 +124,16 @@ private extension WeatherPresenter {
                     backgroundPhotoURL: photoURL
                 )
 
+                cacheRepository.saveCache(
+                    CachedWeather(
+                        forecast: forecast,
+                        currentWeather: currentWeather,
+                        cityName: forecast.cityName.isEmpty ? selectedCity.name : forecast.cityName
+                    ),
+                    for: cacheKey,
+                    at: Date()
+                )
+
                 await MainActor.run {
                     self.view?.displayState(.content(viewModel))
                 }
@@ -103,8 +142,20 @@ private extension WeatherPresenter {
             } catch {
                 lastRequestedCity = nil
 
-                await MainActor.run {
-                    self.view?.displayState(.error("Не удалось загрузить данные о погоде"))
+                if let cached {
+                    let viewModel = makeViewModel(
+                        from: cached.payload.forecast,
+                        currentWeather: cached.payload.currentWeather,
+                        fallbackCity: cached.payload.cityName,
+                        backgroundPhotoURL: nil
+                    )
+                    await MainActor.run {
+                        self.view?.displayState(.stale(viewModel, fetchedAt: cached.fetchedAt))
+                    }
+                } else {
+                    await MainActor.run {
+                        self.view?.displayState(.error("Не удалось загрузить данные о погоде"))
+                    }
                 }
 
                 print("Weather loading error:", error.localizedDescription)
@@ -115,6 +166,12 @@ private extension WeatherPresenter {
 
     func fetchCurrentWeatherOptional(lat: Double, lon: Double) async -> CurrentWeather? {
         try? await weatherService.fetchCurrentWeather(lat: lat, lon: lon)
+    }
+
+    func makeCacheKey(for city: SelectedCity) -> String {
+        let lat = (city.latitude * 10_000).rounded() / 10_000
+        let lon = (city.longitude * 10_000).rounded() / 10_000
+        return "\(lat),\(lon)"
     }
     
     func resolvePhotoURL(for city: SelectedCity) async -> URL? {

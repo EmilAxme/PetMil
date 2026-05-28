@@ -54,6 +54,12 @@ final class WeatherViewController: UIViewController {
     private lazy var conditionGridView = ConditionGridView()
 
     private lazy var loadingView = WeatherLoadingView()
+
+    private lazy var staleBanner: WeatherStaleBanner = {
+        let banner = WeatherStaleBanner()
+        banner.isHidden = true
+        return banner
+    }()
     
     private lazy var refreshControl: UIRefreshControl = {
         let control = UIRefreshControl()
@@ -128,6 +134,7 @@ private extension WeatherViewController {
         view.addToView(errorView)
         view.addToView(emptyCityView)
         view.addToView(loadingView)
+        view.addToView(staleBanner)
 
         NSLayoutConstraint.activate([
             backgroundPhotoView.topAnchor.constraint(equalTo: view.topAnchor),
@@ -176,7 +183,12 @@ private extension WeatherViewController {
             loadingView.topAnchor.constraint(equalTo: view.topAnchor),
             loadingView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             loadingView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            loadingView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+            loadingView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+
+            staleBanner.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 6),
+            staleBanner.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            staleBanner.leadingAnchor.constraint(greaterThanOrEqualTo: view.leadingAnchor, constant: 16),
+            staleBanner.trailingAnchor.constraint(lessThanOrEqualTo: view.trailingAnchor, constant: -16)
         ])
     }
 
@@ -223,6 +235,13 @@ private extension WeatherViewController {
         presenter?.refreshWeather()
     }
 
+    func setStaleState(viewModel: WeatherModels.ViewModel, fetchedAt: Date) {
+        setContentState(viewModel: viewModel)
+        staleBanner.configure(fetchedAt: fetchedAt)
+        staleBanner.isHidden = false
+        view.bringSubviewToFront(staleBanner)
+    }
+
     func setContentState(viewModel: WeatherModels.ViewModel) {
         forecastRows = viewModel.rows
 
@@ -257,6 +276,7 @@ private extension WeatherViewController {
         contentContainerView.isHidden = false
         errorView.isHidden = true
         emptyCityView.isHidden = true
+        staleBanner.isHidden = true
 
         loadingView.hideAnimated {
             UIView.animate(withDuration: 0.4, delay: 0, options: .curveEaseOut) {
@@ -302,6 +322,7 @@ private extension WeatherViewController {
         hourlyForecastView.isHidden = true
         contentContainerView.isHidden = true
         emptyCityView.isHidden = true
+        staleBanner.isHidden = true
 
         errorView.isHidden = false
         errorView.configure(message: message)
@@ -313,6 +334,7 @@ private extension WeatherViewController {
         hourlyForecastView.isHidden = true
         contentContainerView.isHidden = true
         errorView.isHidden = true
+        staleBanner.isHidden = true
 
         emptyCityView.isHidden = false
     }
@@ -325,6 +347,8 @@ extension WeatherViewController: WeatherViewProtocol {
             setLoadingState()
         case .content(let viewModel):
             setContentState(viewModel: viewModel)
+        case .stale(let viewModel, let fetchedAt):
+            setStaleState(viewModel: viewModel, fetchedAt: fetchedAt)
         case .error(let message):
             setErrorState(message: message)
         case .noCitySelected:

@@ -11,6 +11,7 @@ enum WeatherModels {
     enum ViewState {
         case loading
         case content(ViewModel)
+        case stale(ViewModel, fetchedAt: Date)
         case error(String)
         case noCitySelected
     }
