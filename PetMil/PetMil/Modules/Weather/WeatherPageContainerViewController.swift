@@ -31,6 +31,18 @@ final class WeatherPageContainerViewController: UIViewController {
         return control
     }()
 
+    private lazy var settingsButton: UIButton = {
+        var configuration = UIButton.Configuration.plain()
+        configuration.image = UIImage(systemName: "gearshape.fill")
+        configuration.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(pointSize: 18, weight: .semibold)
+        configuration.baseForegroundColor = .label
+        configuration.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8)
+
+        let button = UIButton(configuration: configuration)
+        button.addTarget(self, action: #selector(handleSettingsTapped), for: .touchUpInside)
+        return button
+    }()
+
     private var pageControllers: [WeatherViewController] = []
     private var isPageBoundToList = false
 
@@ -66,6 +78,7 @@ private extension WeatherPageContainerViewController {
         pageViewController.didMove(toParent: self)
 
         view.addToView(pageControl)
+        view.addToView(settingsButton)
     }
 
     func setupLayout() {
@@ -78,7 +91,12 @@ private extension WeatherPageContainerViewController {
             pageControl.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             pageControl.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             pageControl.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -2),
-            pageControl.heightAnchor.constraint(equalToConstant: 20)
+            pageControl.heightAnchor.constraint(equalToConstant: 20),
+
+            settingsButton.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 4),
+            settingsButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -8),
+            settingsButton.widthAnchor.constraint(equalToConstant: 40),
+            settingsButton.heightAnchor.constraint(equalToConstant: 40)
         ])
     }
 
@@ -87,6 +105,12 @@ private extension WeatherPageContainerViewController {
             self,
             selector: #selector(cityListChanged),
             name: .cityListDidChange,
+            object: nil
+        )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(unitPreferencesChanged),
+            name: .unitPreferencesDidChange,
             object: nil
         )
     }
@@ -163,6 +187,17 @@ private extension WeatherPageContainerViewController {
         if currentCount != storedCount {
             rebuildPages()
         }
+    }
+
+    @objc
+    func unitPreferencesChanged() {
+        rebuildPages()
+    }
+
+    @objc
+    func handleSettingsTapped() {
+        let settingsVC = SettingsAssembly.build()
+        present(settingsVC, animated: true)
     }
 
     @objc
