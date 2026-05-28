@@ -9,6 +9,7 @@ import Foundation
 
 protocol WeatherServiceProtocol: AnyObject {
     func fetchCityLocation(for city: String) async throws -> CityLocation
+    func reverseGeocode(lat: Double, lon: Double) async throws -> CityLocation
     func fetchForecast(lat: Double, lon: Double) async throws -> Forecast
 }
 
@@ -30,11 +31,27 @@ extension WeatherService {
     func fetchCityLocation(for city: String) async throws -> CityLocation {
         let endpoint = OpenWeatherEndpoint.geocoding(city: city, apiKey: apiKey)
         let response = try await networkClient.request(endpoint, type: [GeocodingResponseDTO].self)
-        
+
         guard let firstCity = response.first else {
             throw APIError.requestFailed
         }
-        
+
+        return CityLocation(
+            name: firstCity.name,
+            latitude: firstCity.lat,
+            longitude: firstCity.lon,
+            country: firstCity.country
+        )
+    }
+
+    func reverseGeocode(lat: Double, lon: Double) async throws -> CityLocation {
+        let endpoint = OpenWeatherEndpoint.reverseGeocoding(lat: lat, lon: lon, apiKey: apiKey)
+        let response = try await networkClient.request(endpoint, type: [GeocodingResponseDTO].self)
+
+        guard let firstCity = response.first else {
+            throw APIError.requestFailed
+        }
+
         return CityLocation(
             name: firstCity.name,
             latitude: firstCity.lat,
