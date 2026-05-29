@@ -13,14 +13,19 @@ enum LocationError: Error {
     case unavailable
 }
 
+struct GeoCoordinate {
+    let latitude: Double
+    let longitude: Double
+}
+
 protocol LocationServiceProtocol: AnyObject {
-    func requestCurrentLocation() async throws -> CLLocationCoordinate2D
+    func requestCurrentLocation() async throws -> GeoCoordinate
 }
 
 final class LocationService: NSObject, LocationServiceProtocol {
 
     private let manager: CLLocationManager
-    private var locationContinuation: CheckedContinuation<CLLocationCoordinate2D, Error>?
+    private var locationContinuation: CheckedContinuation<GeoCoordinate, Error>?
     private var authorizationContinuation: CheckedContinuation<CLAuthorizationStatus, Never>?
 
     override init() {
@@ -30,7 +35,7 @@ final class LocationService: NSObject, LocationServiceProtocol {
         manager.desiredAccuracy = kCLLocationAccuracyHundredMeters
     }
 
-    func requestCurrentLocation() async throws -> CLLocationCoordinate2D {
+    func requestCurrentLocation() async throws -> GeoCoordinate {
         let status = await currentAuthorizationStatus()
 
         switch status {
@@ -60,7 +65,7 @@ private extension LocationService {
         }
     }
 
-    func resumeLocation(with result: Result<CLLocationCoordinate2D, Error>) {
+    func resumeLocation(with result: Result<GeoCoordinate, Error>) {
         guard let continuation = locationContinuation else { return }
         locationContinuation = nil
         continuation.resume(with: result)
@@ -81,10 +86,14 @@ extension LocationService: CLLocationManagerDelegate {
     }
 
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        guard let coordinate = locations.last?.coordinate else {
+        guard let location = locations.last else {
             resumeLocation(with: .failure(LocationError.unavailable))
             return
         }
+        let coordinate = GeoCoordinate(
+            latitude: location.coordinate.latitude,
+            longitude: location.coordinate.longitude
+        )
         resumeLocation(with: .success(coordinate))
     }
 
