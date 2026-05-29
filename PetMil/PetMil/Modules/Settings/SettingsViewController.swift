@@ -7,15 +7,15 @@
 
 import UIKit
 
+fileprivate enum SettingsRow {
+    case temperature, wind, pressure, clockFormat, language
+}
+
 final class SettingsViewController: UIViewController {
 
     private let settingsStorage: SettingsStorageProtocol
     private let l10n: L10n
     private var formatter: UnitFormatter
-
-    private enum SettingsRow {
-        case temperature, wind, pressure, clockFormat, language
-    }
 
     private let sectionsLayout: [[SettingsRow]] = [
         [.temperature, .wind, .pressure],
