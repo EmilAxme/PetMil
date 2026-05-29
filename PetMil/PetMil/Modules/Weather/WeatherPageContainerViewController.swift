@@ -10,6 +10,30 @@ import UIKit
 final class WeatherPageContainerViewController: UIViewController {
 
     private let cityListStorage: CityListStorageProtocol
+    private let imageLoaderService: ImageLoaderServiceProtocol = ImageLoaderService()
+
+    private var backgroundPhotoTask: Task<Void, Never>?
+    private var currentLoadedBackgroundURL: URL?
+
+    private lazy var backgroundPhotoView: UIImageView = {
+        let imageView = UIImageView()
+        imageView.contentMode = .scaleAspectFill
+        imageView.clipsToBounds = true
+        return imageView
+    }()
+
+    private lazy var backgroundDimView: UIView = {
+        let view = UIView()
+        view.backgroundColor = .black.withAlphaComponent(0.25)
+        view.isHidden = true
+        return view
+    }()
+
+    private lazy var backgroundFallbackView: UIView = {
+        let view = UIView()
+        view.backgroundColor = .systemBlue.withAlphaComponent(0.15)
+        return view
+    }()
 
     private lazy var pageViewController: UIPageViewController = {
         let controller = UIPageViewController(
@@ -58,6 +82,7 @@ final class WeatherPageContainerViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .systemBackground
+        setupBackground()
         setupChildren()
         setupLayout()
         rebuildPages()
@@ -72,9 +97,36 @@ final class WeatherPageContainerViewController: UIViewController {
 }
 
 private extension WeatherPageContainerViewController {
+    func setupBackground() {
+        view.addToView(backgroundFallbackView)
+        view.addToView(backgroundPhotoView)
+        view.addToView(backgroundDimView)
+
+        NSLayoutConstraint.activate([
+            backgroundFallbackView.topAnchor.constraint(equalTo: view.topAnchor),
+            backgroundFallbackView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            backgroundFallbackView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            backgroundFallbackView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+
+            backgroundPhotoView.topAnchor.constraint(equalTo: view.topAnchor),
+            backgroundPhotoView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            backgroundPhotoView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            backgroundPhotoView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+
+            backgroundDimView.topAnchor.constraint(equalTo: view.topAnchor),
+            backgroundDimView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            backgroundDimView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            backgroundDimView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        ])
+    }
+
     func setupChildren() {
         addChild(pageViewController)
         view.addToView(pageViewController.view)
+        pageViewController.view.backgroundColor = .clear
+        if let pageScrollView = pageViewController.view.subviews.first(where: { $0 is UIScrollView }) {
+            pageScrollView.backgroundColor = .clear
+        }
         pageViewController.didMove(toParent: self)
 
         view.addToView(pageControl)
@@ -135,6 +187,8 @@ private extension WeatherPageContainerViewController {
             )
         }
 
+        wireBackgroundCallbacks()
+
         pageControl.numberOfPages = cities.isEmpty ? 0 : cities.count
         let activeIdx = clampedActiveIndex()
         pageControl.currentPage = activeIdx
@@ -146,6 +200,53 @@ private extension WeatherPageContainerViewController {
             animated: false
         )
         isPageBoundToList = true
+    }
+
+    func wireBackgroundCallbacks() {
+        for vc in pageControllers {
+            vc.onContentLoaded = { [weak self, weak vc] url in
+                guard let self, let vc else { return }
+                let activeIdx = self.clampedActiveIndex()
+                guard self.pageControllers.indices.contains(activeIdx),
+                      self.pageControllers[activeIdx] === vc else { return }
+                self.loadBackground(url: url)
+            }
+        }
+    }
+
+    func loadBackground(url: URL?) {
+        if currentLoadedBackgroundURL == url, url != nil { return }
+        currentLoadedBackgroundURL = url
+
+        backgroundPhotoTask?.cancel()
+
+        guard let url else {
+            UIView.transition(
+                with: backgroundPhotoView,
+                duration: 0.3,
+                options: .transitionCrossDissolve
+            ) {
+                self.backgroundPhotoView.image = nil
+                self.backgroundDimView.isHidden = true
+            }
+            return
+        }
+
+        backgroundPhotoTask = Task { [weak self] in
+            guard let self else { return }
+            let image = await imageLoaderService.loadImage(from: url)
+            await MainActor.run {
+                guard self.currentLoadedBackgroundURL == url else { return }
+                UIView.transition(
+                    with: self.backgroundPhotoView,
+                    duration: 0.4,
+                    options: .transitionCrossDissolve
+                ) {
+                    self.backgroundPhotoView.image = image
+                    self.backgroundDimView.isHidden = image == nil
+                }
+            }
+        }
     }
 
     func syncWithStorageIfNeeded() {
@@ -206,12 +307,14 @@ private extension WeatherPageContainerViewController {
         guard pageControllers.indices.contains(target) else { return }
         let current = clampedActiveIndex()
         let direction: UIPageViewController.NavigationDirection = target > current ? .forward : .reverse
+        let targetVC = pageControllers[target]
         pageViewController.setViewControllers(
-            [pageControllers[target]],
+            [targetVC],
             direction: direction,
             animated: true
         )
         cityListStorage.activeIndex = target
+        loadBackground(url: targetVC.currentBackgroundPhotoURL)
     }
 }
 
@@ -255,5 +358,6 @@ extension WeatherPageContainerViewController: UIPageViewControllerDelegate {
         }
         pageControl.currentPage = index
         cityListStorage.activeIndex = index
+        loadBackground(url: visible.currentBackgroundPhotoURL)
     }
 }

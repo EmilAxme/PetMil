@@ -12,33 +12,16 @@ protocol WeatherViewProtocol: AnyObject {
 }
 
 final class WeatherViewController: UIViewController {
-    
+
     var presenter: WeatherPresenterProtocol?
     var weatherIconService: WeatherIconServiceProtocol?
-    var imageLoaderService: ImageLoaderServiceProtocol?
+
+    var onContentLoaded: ((URL?) -> Void)?
+
+    private(set) var currentBackgroundPhotoURL: URL?
 
     private var forecastRows: [WeatherModels.ForecastRow] = []
-    private var backgroundPhotoTask: Task<Void, Never>?
 
-    private lazy var backgroundPhotoView: UIImageView = {
-        let imageView = UIImageView()
-        imageView.contentMode = .scaleAspectFill
-        imageView.clipsToBounds = true
-        return imageView
-    }()
-
-    private lazy var backgroundDimView: UIView = {
-        let view = UIView()
-        view.backgroundColor = .black.withAlphaComponent(0.35)
-        return view
-    }()
-
-    private lazy var backgroundView: UIView = {
-        let view = UIView()
-        view.backgroundColor = .systemBlue.withAlphaComponent(0.15)
-        return view
-    }()
-    
     private lazy var contentContainerView: UIView = {
         let view = UIView()
         view.backgroundColor = .secondarySystemBackground.withAlphaComponent(1)
@@ -120,13 +103,10 @@ final class WeatherViewController: UIViewController {
 
 private extension WeatherViewController {
     func setupAppearance() {
-        view.backgroundColor = .systemBackground
+        view.backgroundColor = .clear
     }
-    
+
     func setupLayout() {
-        view.addToView(backgroundPhotoView)
-        view.addToView(backgroundDimView)
-        view.addToView(backgroundView)
         view.addToView(headerView)
         view.addToView(hourlyForecastView)
         view.addToView(contentContainerView)
@@ -137,21 +117,6 @@ private extension WeatherViewController {
         view.addToView(staleBanner)
 
         NSLayoutConstraint.activate([
-            backgroundPhotoView.topAnchor.constraint(equalTo: view.topAnchor),
-            backgroundPhotoView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            backgroundPhotoView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            backgroundPhotoView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-
-            backgroundDimView.topAnchor.constraint(equalTo: view.topAnchor),
-            backgroundDimView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            backgroundDimView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            backgroundDimView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-
-            backgroundView.topAnchor.constraint(equalTo: view.topAnchor),
-            backgroundView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            backgroundView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            backgroundView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-
             headerView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 12),
             headerView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             headerView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
@@ -243,6 +208,8 @@ private extension WeatherViewController {
     }
 
     func setContentState(viewModel: WeatherModels.ViewModel) {
+        let wasLoading = !loadingView.isHidden && loadingView.alpha > 0.01
+
         forecastRows = viewModel.rows
 
         headerView.configure(
@@ -261,16 +228,14 @@ private extension WeatherViewController {
         conditionGridView.configure(with: viewModel.conditionTiles)
         layoutTableHeaderIfNeeded()
 
-        loadBackgroundPhoto(url: viewModel.backgroundPhotoURL)
+        currentBackgroundPhotoURL = viewModel.backgroundPhotoURL
+        onContentLoaded?(viewModel.backgroundPhotoURL)
 
         weatherTableView.reloadData()
         refreshControl.endRefreshing()
 
         let hasHourly = !viewModel.hourlyRows.isEmpty
 
-        headerView.alpha = 0
-        hourlyForecastView.alpha = 0
-        contentContainerView.alpha = 0
         headerView.isHidden = false
         hourlyForecastView.isHidden = !hasHourly
         contentContainerView.isHidden = false
@@ -278,40 +243,23 @@ private extension WeatherViewController {
         emptyCityView.isHidden = true
         staleBanner.isHidden = true
 
-        loadingView.hideAnimated {
-            UIView.animate(withDuration: 0.4, delay: 0, options: .curveEaseOut) {
-                self.headerView.alpha = 1
-                self.hourlyForecastView.alpha = 1
-                self.contentContainerView.alpha = 1
-            }
-        }
-    }
+        if wasLoading {
+            headerView.alpha = 0
+            hourlyForecastView.alpha = 0
+            contentContainerView.alpha = 0
 
-    func loadBackgroundPhoto(url: URL?) {
-        backgroundPhotoTask?.cancel()
-
-        guard let url else {
-            backgroundPhotoView.image = nil
-            backgroundView.backgroundColor = .systemBlue.withAlphaComponent(0.15)
-            backgroundDimView.isHidden = true
-            return
-        }
-
-        backgroundDimView.isHidden = false
-
-        backgroundPhotoTask = Task { [weak self] in
-            guard let self else { return }
-            let image = await imageLoaderService?.loadImage(from: url)
-            await MainActor.run {
-                UIView.transition(
-                    with: self.backgroundPhotoView,
-                    duration: 0.4,
-                    options: .transitionCrossDissolve
-                ) {
-                    self.backgroundPhotoView.image = image
-                    self.backgroundView.backgroundColor = image != nil ? .clear : .systemBlue.withAlphaComponent(0.15)
+            loadingView.hideAnimated {
+                UIView.animate(withDuration: 0.4, delay: 0, options: .curveEaseOut) {
+                    self.headerView.alpha = 1
+                    self.hourlyForecastView.alpha = 1
+                    self.contentContainerView.alpha = 1
                 }
             }
+        } else {
+            headerView.alpha = 1
+            hourlyForecastView.alpha = 1
+            contentContainerView.alpha = 1
+            loadingView.isHidden = true
         }
     }
 

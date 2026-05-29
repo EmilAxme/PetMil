@@ -21,7 +21,6 @@ enum WeatherAssembly {
             accessKey: Secrets.unsplashAccessKey
         )
         let weatherIconService = WeatherIconService()
-        let imageLoaderService = ImageLoaderService()
 
         let presenter = WeatherPresenter(
             city: city,
@@ -33,7 +32,6 @@ enum WeatherAssembly {
 
         viewController.presenter = presenter
         viewController.weatherIconService = weatherIconService
-        viewController.imageLoaderService = imageLoaderService
         presenter.view = viewController
 
         return viewController

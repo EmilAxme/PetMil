@@ -115,10 +115,12 @@ final class CityListStorage: CityListStorageProtocol {
 
         if let firstIndex = newCities.firstIndex(where: { $0.isCurrentLocation }) {
             newCities[firstIndex] = gpsCity
-            snapshot = CityListSnapshot(cities: newCities, activeIndex: firstIndex)
+            snapshot = CityListSnapshot(cities: newCities, activeIndex: snapshot.activeIndex)
         } else {
             newCities.insert(gpsCity, at: 0)
-            snapshot = CityListSnapshot(cities: newCities, activeIndex: 0)
+            let wasEmpty = snapshot.cities.isEmpty
+            let newActive = wasEmpty ? 0 : snapshot.activeIndex + 1
+            snapshot = CityListSnapshot(cities: newCities, activeIndex: newActive)
         }
         persist()
     }
