@@ -22,7 +22,7 @@ final class WeatherErrorView: UIView {
     
     private lazy var retryButton: UIButton = {
         let button = UIButton(type: .system)
-        button.setTitle("Retry", for: .normal)
+        button.setTitle(L10n.shared.retry, for: .normal)
         button.titleLabel?.font = .systemFont(ofSize: 17, weight: .semibold)
         button.addTarget(self, action: #selector(retryButtonTapped), for: .touchUpInside)
         return button

@@ -20,16 +20,23 @@ enum CitySearchAssembly {
             networkClient: networkClient,
             accessKey: Secrets.unsplashAccessKey
         )
+        let weatherService = WeatherService(
+            networkClient: networkClient,
+            apiKey: Secrets.openWeatherAPIKey
+        )
+        let locationService = LocationService()
 
         let presenter = CitySearchPresenter(
-            storage: SelectedCityStorage.shared,
+            cityListStorage: CityListStorage.shared,
             citySearchService: citySearchService,
-            unsplashSearchService: unsplashSearchService
+            unsplashSearchService: unsplashSearchService,
+            locationService: locationService,
+            weatherService: weatherService
         )
-        
+
         viewController.presenter = presenter
         presenter.view = viewController
-        
+
         return viewController
     }
 }

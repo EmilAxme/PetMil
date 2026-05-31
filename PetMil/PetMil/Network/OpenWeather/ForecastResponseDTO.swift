@@ -17,6 +17,7 @@ struct ForecastItemDTO: Decodable {
     let main: ForecastMainDTO
     let weather: [ForecastWeatherDTO]
     let wind: ForecastWindDTO
+    let pop: Double?
 }
 
 struct ForecastMainDTO: Decodable {

@@ -8,20 +8,23 @@
 import UIKit
 
 protocol CitySearchViewProtocol: AnyObject {
-    func displayCities(_ viewModel: CitySearchModels.ViewModel)
+    func displayList(_ content: CitySearchModels.ListContent)
+    func displayLoading(_ isLoading: Bool)
+    func displayLocationLoading(_ isLoading: Bool)
+    func displayLocationError(_ message: String)
     func routeToWeatherScreen()
 }
 
 final class CitySearchViewController: UIViewController {
-    
+
     var presenter: CitySearchPresenterProtocol?
-    
-    private var cities: [CitySearchModels.City] = []
+
+    private var listContent: CitySearchModels.ListContent = .empty(message: "")
     
     private lazy var searchController: UISearchController = {
         let controller = UISearchController(searchResultsController: nil)
         controller.obscuresBackgroundDuringPresentation = false
-        controller.searchBar.placeholder = "Search city"
+        controller.searchBar.placeholder = L10n.shared.searchCityPlaceholder
         controller.searchResultsUpdater = self
         return controller
     }()
@@ -38,10 +41,24 @@ final class CitySearchViewController: UIViewController {
         tableView.register(CityResultCell.self, forCellReuseIdentifier: CityResultCell.reuseIdentifier)
         return tableView
     }()
+
+    private lazy var currentLocationButton: CurrentLocationButton = {
+        let button = CurrentLocationButton()
+        button.onTap = { [weak self] in
+            self?.presenter?.didTapCurrentLocation()
+        }
+        return button
+    }()
     
+    private lazy var searchLoadingIndicator: UIActivityIndicatorView = {
+        let indicator = UIActivityIndicatorView(style: .medium)
+        indicator.hidesWhenStopped = true
+        return indicator
+    }()
+
     private lazy var emptyStateLabel: UILabel = {
         let label = UILabel()
-        label.text = "Ничего не найдено,\nвидимо город скрыт за туманом..."
+        label.text = L10n.shared.nothingFound
         label.font = .systemFont(ofSize: 20, weight: .medium)
         label.textColor = .secondaryLabel
         label.textAlignment = .center
@@ -54,13 +71,19 @@ final class CitySearchViewController: UIViewController {
         super.viewDidLoad()
         setupAppearance()
         setupLayout()
+        setupCurrentLocationHeader()
         presenter?.viewDidLoad()
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        presenter?.viewWillAppear()
     }
 }
 
 private extension CitySearchViewController {
     func setupAppearance() {
-        title = "Search City"
+        title = L10n.shared.searchCityTitle
         view.backgroundColor = .systemBackground
         navigationItem.searchController = searchController
         navigationItem.hidesSearchBarWhenScrolling = false
@@ -70,32 +93,74 @@ private extension CitySearchViewController {
     func setupLayout() {
         view.addToView(cityTableView)
         view.addToView(emptyStateLabel)
-        
+
         NSLayoutConstraint.activate([
             cityTableView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             cityTableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             cityTableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             cityTableView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            
+
             emptyStateLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             emptyStateLabel.centerYAnchor.constraint(equalTo: view.centerYAnchor),
             emptyStateLabel.leadingAnchor.constraint(greaterThanOrEqualTo: view.leadingAnchor, constant: 24),
             emptyStateLabel.trailingAnchor.constraint(lessThanOrEqualTo: view.trailingAnchor, constant: -24)
         ])
     }
+
+    func setupCurrentLocationHeader() {
+        let header = UIView()
+        header.addSubview(currentLocationButton)
+        currentLocationButton.translatesAutoresizingMaskIntoConstraints = false
+
+        NSLayoutConstraint.activate([
+            currentLocationButton.topAnchor.constraint(equalTo: header.topAnchor, constant: 4),
+            currentLocationButton.leadingAnchor.constraint(equalTo: header.leadingAnchor),
+            currentLocationButton.trailingAnchor.constraint(equalTo: header.trailingAnchor),
+            currentLocationButton.bottomAnchor.constraint(equalTo: header.bottomAnchor, constant: -4)
+        ])
+
+        let targetWidth = view.bounds.width > 0 ? view.bounds.width : UIScreen.main.bounds.width
+        let fittingSize = header.systemLayoutSizeFitting(
+            CGSize(width: targetWidth, height: UIView.layoutFittingCompressedSize.height)
+        )
+        header.frame = CGRect(x: 0, y: 0, width: targetWidth, height: fittingSize.height)
+        cityTableView.tableHeaderView = header
+    }
 }
 
 extension CitySearchViewController: CitySearchViewProtocol {
-    func displayCities(_ viewModel: CitySearchModels.ViewModel) {
-        cities = viewModel.cities
-        
-        let isEmpty = cities.isEmpty
-        cityTableView.isHidden = isEmpty
-        emptyStateLabel.isHidden = !isEmpty
-        
+    func displayList(_ content: CitySearchModels.ListContent) {
+        listContent = content
+        switch content {
+        case .savedCities, .searchResults:
+            cityTableView.isHidden = false
+            emptyStateLabel.isHidden = true
+        case .empty(let message):
+            cityTableView.isHidden = false
+            emptyStateLabel.text = message
+            emptyStateLabel.isHidden = message.isEmpty
+        }
         cityTableView.reloadData()
     }
-    
+
+    func displayLoading(_ isLoading: Bool) {
+        if isLoading {
+            searchController.searchBar.showLoadingIndicator(searchLoadingIndicator)
+        } else {
+            searchController.searchBar.hideLoadingIndicator(searchLoadingIndicator)
+        }
+    }
+
+    func displayLocationLoading(_ isLoading: Bool) {
+        currentLocationButton.setLoading(isLoading)
+    }
+
+    func displayLocationError(_ message: String) {
+        let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: L10n.shared.ok, style: .default))
+        present(alert, animated: true)
+    }
+
     func routeToWeatherScreen() {
         tabBarController?.selectedIndex = 1
     }
@@ -103,26 +168,55 @@ extension CitySearchViewController: CitySearchViewProtocol {
 
 extension CitySearchViewController: UITableViewDataSource, UITableViewDelegate {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return cities.count
+        switch listContent {
+        case .savedCities(let rows): return rows.count
+        case .searchResults(let cities): return cities.count
+        case .empty: return 0
+        }
     }
-    
+
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        
         guard let cell = tableView.dequeueReusableCell(
             withIdentifier: CityResultCell.reuseIdentifier,
             for: indexPath
         ) as? CityResultCell else {
             return UITableViewCell()
         }
-        
-        cell.configure(with: cities[indexPath.row])
-        
+
+        switch listContent {
+        case .savedCities(let rows):
+            cell.configure(with: rows[indexPath.row])
+        case .searchResults(let cities):
+            cell.configure(with: cities[indexPath.row])
+        case .empty:
+            break
+        }
         return cell
     }
-    
+
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
-        presenter?.didSelectCity(at: indexPath.row)
+        switch listContent {
+        case .savedCities:
+            presenter?.didSelectSavedCity(at: indexPath.row)
+        case .searchResults:
+            presenter?.didSelectCity(at: indexPath.row)
+        case .empty:
+            break
+        }
+    }
+
+    func tableView(
+        _ tableView: UITableView,
+        trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath
+    ) -> UISwipeActionsConfiguration? {
+        guard case .savedCities = listContent else { return nil }
+
+        let delete = UIContextualAction(style: .destructive, title: L10n.shared.delete) { [weak self] _, _, completion in
+            self?.presenter?.didDeleteSavedCity(at: indexPath.row)
+            completion(true)
+        }
+        return UISwipeActionsConfiguration(actions: [delete])
     }
 }
 

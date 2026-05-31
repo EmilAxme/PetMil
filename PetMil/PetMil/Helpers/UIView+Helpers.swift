@@ -14,3 +14,17 @@ extension UIView {
         subView.translatesAutoresizingMaskIntoConstraints = false
     }
 }
+
+extension UISearchBar {
+    func showLoadingIndicator(_ indicator: UIActivityIndicatorView) {
+        searchTextField.rightView = indicator
+        searchTextField.rightViewMode = .always
+        indicator.startAnimating()
+    }
+
+    func hideLoadingIndicator(_ indicator: UIActivityIndicatorView) {
+        indicator.stopAnimating()
+        searchTextField.rightView = nil
+        searchTextField.rightViewMode = .never
+    }
+}
